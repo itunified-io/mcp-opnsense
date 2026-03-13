@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.12
+
+- Comprehensive README.md rewrite documenting all 60 tools across 8 domains (#35)
+- Add `docs/manual-operations.md` — GUI-only operations (SSL cert, config restore, user mgmt, VPN) (#35)
+- Add Known Limitations section to README (#35)
+
 ## v2026.03.13.11
 
 - Remove broken `opnsense_sys_set_webgui_cert` tool — OPNsense has no config restore/import API (#33)
