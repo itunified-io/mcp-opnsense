@@ -281,7 +281,7 @@ export const acmeToolDefinitions = [
         description: { type: "string", description: "Optional description" },
         alt_names: {
           type: "string",
-          description: "Comma-separated Subject Alternative Names (e.g. 'fw.example.com,*.itunified.io')",
+          description: "Comma-separated Subject Alternative Names (e.g. 'fw.example.com,*.example.com')",
         },
         account_uuid: { type: "string", description: "UUID of the ACME account" },
         validation_uuid: { type: "string", description: "UUID of the challenge/validation method" },
