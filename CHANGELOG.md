@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
+
+## v2026.03.13.4
+
+- Elevate CHANGELOG.md to standalone mandatory section in CLAUDE.md (#13)
+- Explicit: CHANGELOG.md must exist and every PR merge must add an entry
+
 ## v2026.03.13.2
 
 - Add 9 ACME/Let's Encrypt tools with Cloudflare DNS-01 challenge support (#8)
