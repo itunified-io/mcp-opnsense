@@ -12,6 +12,7 @@ Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense R
 - **Interfaces** — List, configuration, statistics (read-only)
 - **DHCP** — Leases, static mappings (ISC DHCPv4 + Kea dual support)
 - **System** — Info, backup/restore, service control
+- **ACME/Let's Encrypt** — Accounts, DNS-01 challenges (Cloudflare, AWS, etc.), certificates, renewal
 
 ## Quick Start
 
@@ -127,6 +128,19 @@ Add to your Claude Code MCP configuration (`~/.claude/mcp_settings.json`):
 | `opnsense_sys_restore` | Restore configuration (requires confirmation) |
 | `opnsense_svc_list` | List services and their status |
 | `opnsense_svc_control` | Start/stop/restart a service |
+
+### ACME/Let's Encrypt (9 tools)
+| Tool | Description |
+|------|-------------|
+| `opnsense_acme_list_accounts` | List ACME accounts (Let's Encrypt, ZeroSSL) |
+| `opnsense_acme_list_challenges` | List challenge/validation methods |
+| `opnsense_acme_add_challenge` | Add DNS-01 challenge (Cloudflare, AWS, etc.) |
+| `opnsense_acme_delete_challenge` | Delete a challenge by UUID |
+| `opnsense_acme_list_certs` | List certificates and status |
+| `opnsense_acme_create_cert` | Create a new certificate request |
+| `opnsense_acme_delete_cert` | Delete a certificate by UUID |
+| `opnsense_acme_renew_cert` | Trigger certificate renewal |
+| `opnsense_acme_apply` | Apply ACME configuration changes |
 
 ## Security
 
