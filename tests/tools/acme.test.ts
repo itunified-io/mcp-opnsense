@@ -12,8 +12,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('ACME Tool Definitions', () => {
-  it('exports 11 tool definitions', () => {
-    expect(acmeToolDefinitions).toHaveLength(11);
+  it('exports 14 tool definitions', () => {
+    expect(acmeToolDefinitions).toHaveLength(14);
   });
 
   it('all tools have opnsense_acme_ prefix', () => {
@@ -59,7 +59,7 @@ describe('handleAcmeTool', () => {
     expect(client.get).toHaveBeenCalledWith('/acmeclient/validations/search');
   });
 
-  it('adds a challenge with valid params', async () => {
+  it('adds a challenge with Cloudflare credential fields', async () => {
     const client = mockClient({
       post: vi.fn().mockResolvedValue({ uuid: 'challenge-uuid' }),
     });
@@ -67,12 +67,37 @@ describe('handleAcmeTool', () => {
     const result = await handleAcmeTool('opnsense_acme_add_challenge', {
       name: 'Cloudflare DNS-01',
       dns_service: 'dns_cf',
-      dns_environment: 'CF_Token=xxx CF_Account_ID=yyy',
+      dns_cf_token: 'my-cf-token',
+      dns_cf_account_id: 'my-account-id',
     }, client);
 
     expect(result.content[0].text).toContain('challenge-uuid');
     expect(client.post).toHaveBeenCalledWith('/acmeclient/validations/add', expect.objectContaining({
-      validation: expect.objectContaining({ dns_service: 'dns_cf' }),
+      validation: expect.objectContaining({
+        dns_service: 'dns_cf',
+        dns_cf_token: 'my-cf-token',
+        dns_cf_account_id: 'my-account-id',
+      }),
+    }));
+  });
+
+  it('adds a challenge without provider fields (backward compat)', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ uuid: 'challenge-uuid' }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_add_challenge', {
+      name: 'AWS DNS',
+      dns_service: 'dns_aws',
+      dns_environment: 'AWS_ACCESS_KEY_ID=xxx AWS_SECRET_ACCESS_KEY=yyy',
+    }, client);
+
+    expect(result.content[0].text).toContain('challenge-uuid');
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/validations/add', expect.objectContaining({
+      validation: expect.objectContaining({
+        dns_service: 'dns_aws',
+        dns_environment: 'AWS_ACCESS_KEY_ID=xxx AWS_SECRET_ACCESS_KEY=yyy',
+      }),
     }));
   });
 
@@ -84,6 +109,30 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].text).toContain('Error');
+  });
+
+  it('updates a challenge using /update/ endpoint (not /set/)', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ result: 'saved' }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_update_challenge', {
+      uuid: '550e8400-e29b-41d4-a716-446655440000',
+      dns_cf_token: 'new-token',
+      dns_cf_account_id: 'new-account-id',
+    }, client);
+
+    expect(result.content[0].text).toContain('saved');
+    // CRITICAL: must use /update/ not /set/ (#25)
+    expect(client.post).toHaveBeenCalledWith(
+      '/acmeclient/validations/update/550e8400-e29b-41d4-a716-446655440000',
+      expect.objectContaining({
+        validation: expect.objectContaining({
+          dns_cf_token: 'new-token',
+          dns_cf_account_id: 'new-account-id',
+        }),
+      }),
+    );
   });
 
   it('deletes a challenge by UUID', async () => {
@@ -109,7 +158,7 @@ describe('handleAcmeTool', () => {
     expect(client.get).toHaveBeenCalledWith('/acmeclient/certificates/search');
   });
 
-  it('creates a certificate with valid params', async () => {
+  it('creates a certificate with correct keyLength mapping (#23)', async () => {
     const client = mockClient({
       post: vi.fn().mockResolvedValue({ uuid: 'cert-uuid' }),
     });
@@ -125,8 +174,48 @@ describe('handleAcmeTool', () => {
     expect(client.post).toHaveBeenCalledWith('/acmeclient/certificates/add', expect.objectContaining({
       certificate: expect.objectContaining({
         name: 'fw.example.com',
-        keyLength: 'ec256',
+        keyLength: 'key_ec256', // mapped from ec256 → key_ec256
         autoRenewal: '1',
+      }),
+    }));
+  });
+
+  it('maps ec384 to key_ec384', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ uuid: 'cert-uuid' }),
+    });
+
+    await handleAcmeTool('opnsense_acme_create_cert', {
+      name: 'test.example.com',
+      alt_names: 'test.example.com',
+      account_uuid: '550e8400-e29b-41d4-a716-446655440000',
+      validation_uuid: '660e8400-e29b-41d4-a716-446655440000',
+      key_length: 'ec384',
+    }, client);
+
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/certificates/add', expect.objectContaining({
+      certificate: expect.objectContaining({
+        keyLength: 'key_ec384',
+      }),
+    }));
+  });
+
+  it('passes RSA key lengths unchanged', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ uuid: 'cert-uuid' }),
+    });
+
+    await handleAcmeTool('opnsense_acme_create_cert', {
+      name: 'test.example.com',
+      alt_names: 'test.example.com',
+      account_uuid: '550e8400-e29b-41d4-a716-446655440000',
+      validation_uuid: '660e8400-e29b-41d4-a716-446655440000',
+      key_length: '4096',
+    }, client);
+
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/certificates/add', expect.objectContaining({
+      certificate: expect.objectContaining({
+        keyLength: '4096',
       }),
     }));
   });
@@ -224,6 +313,51 @@ describe('handleAcmeTool', () => {
 
     expect(result.content[0].type).toBe('text');
     expect(client.post).toHaveBeenCalledWith('/acmeclient/accounts/del/550e8400-e29b-41d4-a716-446655440000');
+  });
+
+  it('registers an ACME account', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ response: 'OK' }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_register_account', {
+      uuid: '550e8400-e29b-41d4-a716-446655440000',
+    }, client);
+
+    expect(result.content[0].text).toContain('OK');
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/accounts/register/550e8400-e29b-41d4-a716-446655440000');
+  });
+
+  it('gets ACME settings when no params provided', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue({ acmeclient: { settings: { enabled: '1', environment: 'prod' } } }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_settings', {}, client);
+    expect(result.content[0].text).toContain('prod');
+    expect(client.get).toHaveBeenCalledWith('/acmeclient/settings/get');
+  });
+
+  it('updates ACME settings with acmeclient wrapper (#26)', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ result: 'saved' }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_settings', {
+      enabled: '1',
+      environment: 'prod',
+    }, client);
+
+    expect(result.content[0].text).toContain('saved');
+    // CRITICAL: must use acmeclient wrapper (#26)
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/settings/set', {
+      acmeclient: {
+        settings: {
+          enabled: '1',
+          environment: 'prod',
+        },
+      },
+    });
   });
 
   it('returns error for unknown tool', async () => {
