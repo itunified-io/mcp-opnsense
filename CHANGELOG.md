@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.18
+
+- Add shields.io badges to README.md (release, license, CalVer, Node.js, MCP tools, TypeScript) (#53)
+- Add table of contents to README.md and CLAUDE.md (#53)
+
 ## v2026.03.13.17
 
 - Fix 7 OPNsense 24.7 API compatibility issues discovered during live testing (#45, #46, #47, #48, #49, #50, #51):
