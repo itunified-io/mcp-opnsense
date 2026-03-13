@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.8
+
+- Fix ACME API path prefix from `/acme/` to `/acmeclient/` matching os-acme-client plugin (#21)
+
 ## v2026.03.13.7
 
 - Fix OPNsense API 400 errors on GET/DELETE requests caused by global Content-Type header (#19)

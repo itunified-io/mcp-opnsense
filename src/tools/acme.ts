@@ -215,13 +215,13 @@ export async function handleAcmeTool(
   try {
     switch (name) {
       case "opnsense_acme_list_accounts": {
-        const result = await client.get("/acme/accounts/search");
+        const result = await client.get("/acmeclient/accounts/search");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_acme_add_account": {
         const parsed = AddAccountSchema.parse(args);
-        const result = await client.post("/acme/accounts/add", {
+        const result = await client.post("/acmeclient/accounts/add", {
           account: {
             enabled: "1",
             name: parsed.name,
@@ -234,18 +234,18 @@ export async function handleAcmeTool(
 
       case "opnsense_acme_delete_account": {
         const { uuid } = DeleteAccountSchema.parse(args);
-        const result = await client.post(`/acme/accounts/del/${uuid}`);
+        const result = await client.post(`/acmeclient/accounts/del/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_acme_list_challenges": {
-        const result = await client.get("/acme/validations/search");
+        const result = await client.get("/acmeclient/validations/search");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_acme_add_challenge": {
         const parsed = AddChallengeSchema.parse(args);
-        const result = await client.post("/acme/validations/add", {
+        const result = await client.post("/acmeclient/validations/add", {
           validation: {
             enabled: "1",
             name: parsed.name,
@@ -259,18 +259,18 @@ export async function handleAcmeTool(
 
       case "opnsense_acme_delete_challenge": {
         const { uuid } = DeleteChallengeSchema.parse(args);
-        const result = await client.post(`/acme/validations/del/${uuid}`);
+        const result = await client.post(`/acmeclient/validations/del/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_acme_list_certs": {
-        const result = await client.get("/acme/certificates/search");
+        const result = await client.get("/acmeclient/certificates/search");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_acme_create_cert": {
         const parsed = CreateCertSchema.parse(args);
-        const result = await client.post("/acme/certificates/add", {
+        const result = await client.post("/acmeclient/certificates/add", {
           certificate: {
             enabled: "1",
             name: parsed.name,
@@ -287,18 +287,18 @@ export async function handleAcmeTool(
 
       case "opnsense_acme_delete_cert": {
         const { uuid } = DeleteCertSchema.parse(args);
-        const result = await client.post(`/acme/certificates/del/${uuid}`);
+        const result = await client.post(`/acmeclient/certificates/del/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_acme_renew_cert": {
         const { uuid } = RenewCertSchema.parse(args);
-        const result = await client.post(`/acme/certificates/sign/${uuid}`);
+        const result = await client.post(`/acmeclient/certificates/sign/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_acme_apply": {
-        const result = await client.post("/acme/service/reconfigure");
+        const result = await client.post("/acmeclient/service/reconfigure");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 

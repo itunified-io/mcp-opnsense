@@ -46,7 +46,7 @@ describe('handleAcmeTool', () => {
     const result = await handleAcmeTool('opnsense_acme_list_accounts', {}, client);
     expect(result.content[0].type).toBe('text');
     expect(result.content[0].text).toContain('LE');
-    expect(client.get).toHaveBeenCalledWith('/acme/accounts/search');
+    expect(client.get).toHaveBeenCalledWith('/acmeclient/accounts/search');
   });
 
   it('lists challenges', async () => {
@@ -56,7 +56,7 @@ describe('handleAcmeTool', () => {
 
     const result = await handleAcmeTool('opnsense_acme_list_challenges', {}, client);
     expect(result.content[0].text).toContain('dns_cf');
-    expect(client.get).toHaveBeenCalledWith('/acme/validations/search');
+    expect(client.get).toHaveBeenCalledWith('/acmeclient/validations/search');
   });
 
   it('adds a challenge with valid params', async () => {
@@ -71,7 +71,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].text).toContain('challenge-uuid');
-    expect(client.post).toHaveBeenCalledWith('/acme/validations/add', expect.objectContaining({
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/validations/add', expect.objectContaining({
       validation: expect.objectContaining({ dns_service: 'dns_cf' }),
     }));
   });
@@ -96,7 +96,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].type).toBe('text');
-    expect(client.post).toHaveBeenCalledWith('/acme/validations/del/550e8400-e29b-41d4-a716-446655440000');
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/validations/del/550e8400-e29b-41d4-a716-446655440000');
   });
 
   it('lists certificates', async () => {
@@ -106,7 +106,7 @@ describe('handleAcmeTool', () => {
 
     const result = await handleAcmeTool('opnsense_acme_list_certs', {}, client);
     expect(result.content[0].text).toContain('fw.example.com');
-    expect(client.get).toHaveBeenCalledWith('/acme/certificates/search');
+    expect(client.get).toHaveBeenCalledWith('/acmeclient/certificates/search');
   });
 
   it('creates a certificate with valid params', async () => {
@@ -122,7 +122,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].text).toContain('cert-uuid');
-    expect(client.post).toHaveBeenCalledWith('/acme/certificates/add', expect.objectContaining({
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/certificates/add', expect.objectContaining({
       certificate: expect.objectContaining({
         name: 'fw.example.com',
         keyLength: 'ec256',
@@ -141,7 +141,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].type).toBe('text');
-    expect(client.post).toHaveBeenCalledWith('/acme/certificates/del/550e8400-e29b-41d4-a716-446655440000');
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/certificates/del/550e8400-e29b-41d4-a716-446655440000');
   });
 
   it('renews a certificate', async () => {
@@ -154,7 +154,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].text).toContain('ok');
-    expect(client.post).toHaveBeenCalledWith('/acme/certificates/sign/550e8400-e29b-41d4-a716-446655440000');
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/certificates/sign/550e8400-e29b-41d4-a716-446655440000');
   });
 
   it('applies ACME changes', async () => {
@@ -164,7 +164,7 @@ describe('handleAcmeTool', () => {
 
     const result = await handleAcmeTool('opnsense_acme_apply', {}, client);
     expect(result.content[0].text).toContain('ok');
-    expect(client.post).toHaveBeenCalledWith('/acme/service/reconfigure');
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/service/reconfigure');
   });
 
   it('adds an ACME account with valid params', async () => {
@@ -178,7 +178,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].text).toContain('account-uuid');
-    expect(client.post).toHaveBeenCalledWith('/acme/accounts/add', expect.objectContaining({
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/accounts/add', expect.objectContaining({
       account: expect.objectContaining({
         email: 'admin@example.com',
         ca: 'letsencrypt',
@@ -198,7 +198,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].text).toContain('staging-uuid');
-    expect(client.post).toHaveBeenCalledWith('/acme/accounts/add', expect.objectContaining({
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/accounts/add', expect.objectContaining({
       account: expect.objectContaining({ ca: 'letsencrypt-staging' }),
     }));
   });
@@ -223,7 +223,7 @@ describe('handleAcmeTool', () => {
     }, client);
 
     expect(result.content[0].type).toBe('text');
-    expect(client.post).toHaveBeenCalledWith('/acme/accounts/del/550e8400-e29b-41d4-a716-446655440000');
+    expect(client.post).toHaveBeenCalledWith('/acmeclient/accounts/del/550e8400-e29b-41d4-a716-446655440000');
   });
 
   it('returns error for unknown tool', async () => {
