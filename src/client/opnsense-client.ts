@@ -34,6 +34,18 @@ export class OPNsenseClient {
     }
   }
 
+  async getRaw(path: string): Promise<string> {
+    try {
+      const response = await this.http.get<string>(path, {
+        responseType: "text",
+        headers: { Accept: "application/xml" },
+      });
+      return response.data;
+    } catch (error: unknown) {
+      throw extractError(error, `GET ${path} (raw)`);
+    }
+  }
+
   async post<T>(path: string, data?: unknown): Promise<T> {
     try {
       const response = await this.http.post<T>(path, data ?? {}, {

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.10
+
+- Add `opnsense_sys_set_webgui_cert` tool: assign SSL cert to web GUI via config backup/restore (#29)
+- Add `opnsense_sys_list_certs` tool: list certificates in trust store with refids (#29)
+- Add `getRaw()` method to HTTP client for XML responses (#29)
+- Add 12 system tool tests (new test file)
+- Total: 62 tools, 68 tests
+
 ## v2026.03.13.9
 
 - Fix keyLength mapping: `ec256` → `key_ec256`, `ec384` → `key_ec384` for OPNsense API (#23)
