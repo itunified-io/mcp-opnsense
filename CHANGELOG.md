@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.14
+
+- Switch license from MIT to AGPL-3.0 + commercial dual license (#39)
+- Add COMMERCIAL_LICENSE.md with commercial licensing terms (#39)
+- Update README.md with dual-license notice and sponsorship link (#39)
+- Update package.json license field to AGPL-3.0-only (#39)
+
 ## v2026.03.13.13
 
 - Remove all infrastructure-specific hostnames, IPs, and emails from code, tests, and docs (#37)
