@@ -45,6 +45,25 @@ const DeleteCertSchema = z.object({
   uuid: UuidSchema,
 });
 
+const AddAccountSchema = z.object({
+  name: z.string().min(1, "Account name is required"),
+  email: z.string().email("Valid email address is required"),
+  ca: z.enum([
+    "letsencrypt",
+    "letsencrypt-staging",
+    "zerossl",
+    "buypass",
+    "buypass-test",
+    "sslcom",
+    "google",
+    "googletest",
+  ], { message: "Unsupported certificate authority" }).optional().default("letsencrypt"),
+});
+
+const DeleteAccountSchema = z.object({
+  uuid: UuidSchema,
+});
+
 // ---------------------------------------------------------------------------
 // Tool definitions (for ListTools)
 // ---------------------------------------------------------------------------
@@ -54,6 +73,35 @@ export const acmeToolDefinitions = [
     name: "opnsense_acme_list_accounts",
     description: "List all ACME accounts (Let's Encrypt, ZeroSSL, etc.) configured in the os-acme-client plugin",
     inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_acme_add_account",
+    description:
+      "Register a new ACME account with a certificate authority (Let's Encrypt, ZeroSSL, etc.). Run opnsense_acme_apply afterwards.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        name: { type: "string", description: "Account name (e.g. 'Let\\'s Encrypt Production')" },
+        email: { type: "string", description: "Contact email address for the account" },
+        ca: {
+          type: "string",
+          enum: ["letsencrypt", "letsencrypt-staging", "zerossl", "buypass", "buypass-test", "sslcom", "google", "googletest"],
+          description: "Certificate authority (default: letsencrypt)",
+        },
+      },
+      required: ["name", "email"],
+    },
+  },
+  {
+    name: "opnsense_acme_delete_account",
+    description: "Delete an ACME account by UUID. Run opnsense_acme_apply afterwards.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        uuid: { type: "string", description: "UUID of the account to delete" },
+      },
+      required: ["uuid"],
+    },
   },
   {
     name: "opnsense_acme_list_challenges",
@@ -168,6 +216,25 @@ export async function handleAcmeTool(
     switch (name) {
       case "opnsense_acme_list_accounts": {
         const result = await client.get("/acme/accounts/search");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_acme_add_account": {
+        const parsed = AddAccountSchema.parse(args);
+        const result = await client.post("/acme/accounts/add", {
+          account: {
+            enabled: "1",
+            name: parsed.name,
+            email: parsed.email,
+            ca: parsed.ca,
+          },
+        });
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_acme_delete_account": {
+        const { uuid } = DeleteAccountSchema.parse(args);
+        const result = await client.post(`/acme/accounts/del/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 

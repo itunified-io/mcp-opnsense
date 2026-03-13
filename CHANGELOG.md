@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.5
+
+- Add 5 firmware/plugin management tools: info, status, list_plugins, install, remove (#15)
+- Add 2 ACME account tools: add_account, delete_account (#15)
+- Support for 8 certificate authorities (Let's Encrypt, ZeroSSL, Buypass, SSL.com, Google, etc.)
+- 17 new unit tests (firmware + ACME account)
+- Total: 57 tools, 49 tests
+
 ## v2026.03.13.4
 
 - Elevate CHANGELOG.md to standalone mandatory section in CLAUDE.md (#13)
