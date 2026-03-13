@@ -59,12 +59,21 @@ docs/
 - **Error handling**: No credential leaks in error messages
 - **Credentials**: Never hardcoded, never logged, never in git
 
-## Versioning (CalVer)
+## Versioning & Releases (CalVer)
 
 - Schema: `YYYY.MM.DD.TS` (e.g., `2026.03.13.1`)
 - `package.json`: npm-compatible without leading zeros (`2026.3.13`)
 - Git tags: `v2026.03.13.1` (leading zeros for sorting)
 - CHANGELOG.md: CalVer-based with date headers
+
+### Release Workflow — MANDATORY after every PR merge
+1. **Update CHANGELOG.md** with new version entry (CalVer date header, list of changes)
+2. Update `package.json` version if date changed
+3. Create annotated git tag: `git tag -a v2026.03.13.1 -m "v2026.03.13.1: <summary>"`
+4. Push tag: `git push origin --tags`
+5. Create GitHub release: `gh release create v2026.03.13.1 --title "v2026.03.13.1 — <title>" --notes "<release notes>"`
+6. Release notes must list what changed and reference closed issues
+7. **CHANGELOG.md is mandatory** — always keep it up to date, never skip it
 
 ## Git Workflow
 
