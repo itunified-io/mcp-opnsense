@@ -20,7 +20,6 @@ export class OPNsenseClient {
         rejectUnauthorized: config.verifySsl ?? true,
       }),
       headers: {
-        "Content-Type": "application/json",
         Accept: "application/json",
       },
     });
@@ -37,7 +36,9 @@ export class OPNsenseClient {
 
   async post<T>(path: string, data?: unknown): Promise<T> {
     try {
-      const response = await this.http.post<T>(path, data ?? {});
+      const response = await this.http.post<T>(path, data ?? {}, {
+        headers: { "Content-Type": "application/json" },
+      });
       return response.data;
     } catch (error: unknown) {
       throw extractError(error, `POST ${path}`);
