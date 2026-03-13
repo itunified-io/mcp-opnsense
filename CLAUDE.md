@@ -59,6 +59,7 @@ docs/
 - **Input validation**: Zod schemas for all tool parameters
 - **Error handling**: No credential leaks in error messages
 - **Credentials**: Never hardcoded, never logged, never in git
+- **Secret Redaction — MANDATORY**: When using `grep`, `cat`, `sed`, `awk`, shell scripts, or any tool that reads/displays file contents containing secrets (`.env`, credentials, API keys, tokens, passwords), **ALWAYS redact the secret values** in output. Use patterns like `sed 's/=.*/=<redacted>/'` or equivalent. Never display raw secret values in terminal output, logs, conversation context, or commit messages.
 
 ## Design/Plan Documents — MANDATORY
 
