@@ -100,6 +100,12 @@ docs/
 - **PR workflow**: feature branch -> `gh pr create` -> review -> merge into main
 - **After PR merge: branch/worktree cleanup is mandatory** — `git branch -d <branch>`, `git remote prune origin`, remove worktree. Prevents drift.
 
+### Bug Fixes — MANDATORY Workflow
+- **Every bug fix MUST have a GitHub issue** with appropriate labels (`bug`, scope labels)
+- Issue-first: create issue → branch (`fix/<issue-nr>-<description>`) → fix → PR → merge
+- Bug fix commits must reference the issue: `fix: <description> (#<nr>)`
+- CHANGELOG entry required for every bug fix
+
 ## Language
 
 - All documentation, code comments, commit messages: **English only**
