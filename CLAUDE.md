@@ -1,5 +1,20 @@
 # mcp-opnsense — CLAUDE.md
 
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Architecture](#architecture)
+- [Code Conventions](#code-conventions)
+- [Security](#security)
+- [Design/Plan Documents — MANDATORY](#designplan-documents--mandatory)
+- [CHANGELOG.md — MANDATORY](#changelogmd--mandatory)
+- [Versioning & Releases (CalVer)](#versioning--releases-calver)
+- [Git Workflow](#git-workflow)
+- [Claude Code Skills](#claude-code-skills)
+- [Language](#language)
+- [Development Setup](#development-setup)
+- [Testing](#testing)
+
 ## Project Overview
 
 Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense REST API. Provides ~62 granular tools for DNS, Firewall, Diagnostics, Interfaces, DHCP, System, ACME, and Firmware management.
