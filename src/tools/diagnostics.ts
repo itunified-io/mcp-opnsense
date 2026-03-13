@@ -21,7 +21,7 @@ const TracerouteSchema = z.object({
 });
 
 const DnsLookupSchema = z.object({
-  hostname: z.string().min(1, "Hostname is required"),
+  hostname: z.string().min(1, "Hostname or IP address is required"),
 });
 
 const FwLogsSchema = z.object({
@@ -98,6 +98,21 @@ export const diagnosticsToolDefinitions = [
     },
   },
   {
+    name: "opnsense_diag_reverse_dns",
+    description:
+      "Perform a reverse DNS lookup (IP to hostname) from the OPNsense firewall",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        address: {
+          type: "string",
+          description: "IP address to reverse-lookup",
+        },
+      },
+      required: ["address"],
+    },
+  },
+  {
     name: "opnsense_diag_fw_states",
     description: "List active firewall connection tracking states",
     inputSchema: { type: "object" as const, properties: {} },
@@ -159,31 +174,99 @@ export async function handleDiagnosticsTool(
 
       case "opnsense_diag_ping": {
         const parsed = PingSchema.parse(args);
-        const result = await client.post("/diagnostics/interface/ping", {
-          address: parsed.address,
-          count: String(parsed.count),
-        });
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+
+        // OPNsense 24.7+: job-based ping API (set → start → poll → remove)
+        const setResult = await client.post<{ uuid?: string; result?: string }>(
+          "/diagnostics/ping/set",
+          { ping: { settings: { hostname: parsed.address, count: String(parsed.count) } } },
+        );
+
+        const jobId = setResult.uuid;
+        if (!jobId) {
+          return { content: [{ type: "text", text: JSON.stringify(setResult, null, 2) }] };
+        }
+
+        await client.post(`/diagnostics/ping/start/${jobId}`);
+
+        // Poll until send count reaches requested count (status stays "running" throughout)
+        const maxWait = Math.max(parsed.count * 2000, 10000);
+        const start = Date.now();
+        let result: Record<string, unknown> | undefined;
+        while (Date.now() - start < maxWait) {
+          await new Promise((r) => setTimeout(r, 1500));
+          const jobs = await client.get<{
+            rows?: Array<Record<string, unknown>>;
+          }>("/diagnostics/ping/search_jobs");
+          const job = (jobs.rows ?? []).find(
+            (j) => j.id === jobId || j.uuid === jobId,
+          );
+          if (job && Number(job.send ?? 0) >= parsed.count) {
+            result = job;
+            break;
+          }
+        }
+
+        // Cleanup
+        try {
+          await client.post(`/diagnostics/ping/remove/${jobId}`);
+        } catch {
+          // Best-effort cleanup
+        }
+
+        if (!result) {
+          return { content: [{ type: "text", text: "Ping timed out waiting for results" }] };
+        }
+
+        // Format clean output
+        const output = {
+          host: result.hostname,
+          packets_sent: result.send,
+          packets_received: result.received,
+          packet_loss: result.loss,
+          rtt_min_ms: result.min,
+          rtt_avg_ms: result.avg,
+          rtt_max_ms: result.max,
+          rtt_stddev_ms: result["std-dev"],
+        };
+        return { content: [{ type: "text", text: JSON.stringify(output, null, 2) }] };
       }
 
       case "opnsense_diag_traceroute": {
         const parsed = TracerouteSchema.parse(args);
-        const result = await client.post("/diagnostics/interface/traceroute", {
-          address: parsed.address,
+
+        // OPNsense 24.7+: set is synchronous — executes traceroute and returns results
+        const result = await client.post("/diagnostics/traceroute/set", {
+          traceroute: {
+            settings: {
+              hostname: parsed.address,
+            },
+          },
         });
+
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_diag_dns_lookup": {
         const parsed = DnsLookupSchema.parse(args);
-        const result = await client.post("/diagnostics/dns/lookup", {
-          hostname: parsed.hostname,
-        });
+
+        // OPNsense 24.7+: use reverse_lookup for IP→hostname resolution
+        // Forward lookup (hostname→IP) is not available via API in 24.7
+        const result = await client.get(
+          `/diagnostics/dns/reverse_lookup?address=${encodeURIComponent(parsed.hostname)}`,
+        );
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_diag_reverse_dns": {
+        const parsed = z.object({ address: z.string().min(1) }).parse(args);
+        const result = await client.get(
+          `/diagnostics/dns/reverse_lookup?address=${encodeURIComponent(parsed.address)}`,
+        );
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_diag_fw_states": {
-        const result = await client.get("/diagnostics/firewall/listStates");
+        const result = await client.post("/diagnostics/firewall/query_states");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
