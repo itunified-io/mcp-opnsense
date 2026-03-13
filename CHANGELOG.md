@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.13
+
+- Remove all infrastructure-specific hostnames, IPs, and emails from code, tests, and docs (#37)
+- Rewrite git history to scrub exposed hostnames from all prior commits (#37)
+- Update SECURITY.md contact to #security-reports Slack channel (#37)
+- Fix stale `opnsense_sys_restore` reference in SECURITY.md (#37)
+
 ## v2026.03.13.12
 
 - Comprehensive README.md rewrite documenting all 60 tools across 8 domains (#35)
