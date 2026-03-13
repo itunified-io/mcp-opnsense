@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.9
+
+- Fix keyLength mapping: `ec256` → `key_ec256`, `ec384` → `key_ec384` for OPNsense API (#23)
+- Fix ACME challenge tool: add provider-specific credential fields (dns_cf_token, dns_cf_account_id, etc.) (#24)
+- Fix ACME validation update: use `/update/` endpoint instead of `/set/` which silently drops data (#25)
+- Fix ACME settings: use correct `acmeclient` wrapper key for settings API (#26)
+- Add `opnsense_acme_settings` tool: get/update ACME service settings (enable, environment, log level) (#27)
+- Add `opnsense_acme_register_account` tool: trigger account registration with CA (#28)
+- Add `opnsense_acme_update_challenge` tool: update existing challenge configurations (#25)
+- Total: 60 tools, 56 tests
+
 ## v2026.03.13.8
 
 - Fix ACME API path prefix from `/acme/` to `/acmeclient/` matching os-acme-client plugin (#21)
