@@ -159,6 +159,22 @@ Add to `.mcp.json` in your project root:
 | `opnsense_firmware_install` | Install an OPNsense plugin package |
 | `opnsense_firmware_remove` | Remove a plugin package (requires confirmation) |
 
+## Claude Code Skills
+
+This project includes Claude Code skills that orchestrate multiple MCP tools into higher-level workflows:
+
+| Skill | Type | Description |
+|-------|------|-------------|
+| `opnsense-diagnostics` | Auto | Network connectivity diagnostics (ping, traceroute, DNS, ARP, FW logs) |
+| `opnsense-dns-management` | Auto | DNS record management with verification (add, delete, apply, verify) |
+| `opnsense-firewall-audit` | Auto | Firewall rules security audit (permissive rules, disabled rules, patterns) |
+| `opnsense-service-health` | `/health` | Dashboard-style health overview (system, services, firmware, interfaces) |
+| `opnsense-acme-renew` | `/renew-cert` | ACME certificate status check and renewal |
+
+**Auto** skills are triggered automatically by Claude when relevant. **Slash command** skills are invoked explicitly by the user (e.g., `/health`).
+
+Skills are located in `.claude/skills/` and are auto-discovered when this repo is used as an MCP server.
+
 ## Known Limitations
 
 Some OPNsense operations are not available via the REST API and require manual GUI access:
