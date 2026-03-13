@@ -12,8 +12,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('ACME Tool Definitions', () => {
-  it('exports 9 tool definitions', () => {
-    expect(acmeToolDefinitions).toHaveLength(9);
+  it('exports 11 tool definitions', () => {
+    expect(acmeToolDefinitions).toHaveLength(11);
   });
 
   it('all tools have opnsense_acme_ prefix', () => {
@@ -165,6 +165,65 @@ describe('handleAcmeTool', () => {
     const result = await handleAcmeTool('opnsense_acme_apply', {}, client);
     expect(result.content[0].text).toContain('ok');
     expect(client.post).toHaveBeenCalledWith('/acme/service/reconfigure');
+  });
+
+  it('adds an ACME account with valid params', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ uuid: 'account-uuid' }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_add_account', {
+      name: "Let's Encrypt Production",
+      email: 'admin@example.com',
+    }, client);
+
+    expect(result.content[0].text).toContain('account-uuid');
+    expect(client.post).toHaveBeenCalledWith('/acme/accounts/add', expect.objectContaining({
+      account: expect.objectContaining({
+        email: 'admin@example.com',
+        ca: 'letsencrypt',
+      }),
+    }));
+  });
+
+  it('adds an ACME account with custom CA', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ uuid: 'staging-uuid' }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_add_account', {
+      name: 'LE Staging',
+      email: 'test@example.com',
+      ca: 'letsencrypt-staging',
+    }, client);
+
+    expect(result.content[0].text).toContain('staging-uuid');
+    expect(client.post).toHaveBeenCalledWith('/acme/accounts/add', expect.objectContaining({
+      account: expect.objectContaining({ ca: 'letsencrypt-staging' }),
+    }));
+  });
+
+  it('rejects add account with invalid email', async () => {
+    const client = mockClient();
+    const result = await handleAcmeTool('opnsense_acme_add_account', {
+      name: 'Bad Account',
+      email: 'not-an-email',
+    }, client);
+
+    expect(result.content[0].text).toContain('Error');
+  });
+
+  it('deletes an ACME account by UUID', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ result: 'deleted' }),
+    });
+
+    const result = await handleAcmeTool('opnsense_acme_delete_account', {
+      uuid: '550e8400-e29b-41d4-a716-446655440000',
+    }, client);
+
+    expect(result.content[0].type).toBe('text');
+    expect(client.post).toHaveBeenCalledWith('/acme/accounts/del/550e8400-e29b-41d4-a716-446655440000');
   });
 
   it('returns error for unknown tool', async () => {

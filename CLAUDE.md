@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense REST API. Provides ~50 granular tools for DNS, Firewall, Diagnostics, Interfaces, DHCP, and System management.
+Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense REST API. Provides ~57 granular tools for DNS, Firewall, Diagnostics, Interfaces, DHCP, System, ACME, and Firmware management.
 
 **No SSH. No shell execution. API-only.**
 
@@ -21,7 +21,8 @@ src/
     interfaces.ts          # 3 Interface tools (read-only)
     dhcp.ts                # 5 DHCP tools (ISC + Kea dual support)
     system.ts              # 5 System/Service tools
-    acme.ts                # 9 ACME/Let's Encrypt tools
+    acme.ts                # 11 ACME/Let's Encrypt tools
+    firmware.ts            # 5 Firmware/Plugin management tools
   utils/
     validation.ts          # Shared Zod schemas (IP, UUID, CIDR, etc.)
     errors.ts              # OPNsense error extraction
