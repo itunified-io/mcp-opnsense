@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.6
+
+- Add mandatory design/plan doc workflow to CLAUDE.md (#17)
+
 ## v2026.03.13.5
 
 - Add 5 firmware/plugin management tools: info, status, list_plugins, install, remove (#15)
