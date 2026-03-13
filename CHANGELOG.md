@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.19
+
+- Fix SECURITY.md: replace internal Slack email with GitHub Security Advisories (#55)
+- Scrub Slack workspace email from git history (#55)
+
 ## v2026.03.13.18
 
 - Add shields.io badges to README.md (release, license, CalVer, Node.js, MCP tools, TypeScript) (#53)

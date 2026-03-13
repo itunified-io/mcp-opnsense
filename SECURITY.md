@@ -15,7 +15,7 @@
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do NOT** create a public GitHub issue
-2. Report via Slack: [#opnsense-mcp](mailto:opensense-mcp-aaaatnycbrg3prlpspwfcppf5e@itunified-workspace.slack.com) or email the Slack channel at `opensense-mcp-aaaatnycbrg3prlpspwfcppf5e@itunified-workspace.slack.com`
+2. Use [GitHub Security Advisories](https://github.com/itunified-io/mcp-opnsense/security/advisories/new) to report privately
 3. Include: description, steps to reproduce, potential impact
 
 We will respond within 48 hours and work with you on a fix before public disclosure.
