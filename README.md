@@ -37,7 +37,7 @@ Add to `.mcp.json` in your project root:
       "command": "node",
       "args": ["/path/to/mcp-opnsense/dist/index.js"],
       "env": {
-        "OPNSENSE_URL": "https://192.168.1.1",
+        "OPNSENSE_URL": "https://your-opnsense.example.com",
         "OPNSENSE_API_KEY": "your-api-key",
         "OPNSENSE_API_SECRET": "your-api-secret",
         "OPNSENSE_VERIFY_SSL": "true"

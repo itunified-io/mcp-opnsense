@@ -38,7 +38,7 @@ describe('handleSystemTool', () => {
     });
 
     const result = await handleSystemTool('opnsense_sys_info', {}, client);
-    expect(result.content[0].text).toContain('fw.example.com');
+    expect(result.content[0].text).toContain('fw-test');
     expect(client.get).toHaveBeenCalledWith('/core/system/status');
   });
 
