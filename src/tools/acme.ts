@@ -277,11 +277,11 @@ export const acmeToolDefinitions = [
     inputSchema: {
       type: "object" as const,
       properties: {
-        name: { type: "string", description: "Certificate name (e.g. 'bifrost.itunified.io')" },
+        name: { type: "string", description: "Certificate name (e.g. 'fw.example.com')" },
         description: { type: "string", description: "Optional description" },
         alt_names: {
           type: "string",
-          description: "Comma-separated Subject Alternative Names (e.g. 'bifrost.itunified.io,*.itunified.io')",
+          description: "Comma-separated Subject Alternative Names (e.g. 'fw.example.com,*.example.com')",
         },
         account_uuid: { type: "string", description: "UUID of the ACME account" },
         validation_uuid: { type: "string", description: "UUID of the challenge/validation method" },

@@ -13,7 +13,7 @@ Some OPNsense operations are not available via the REST API and require manual a
 
 ### Steps
 
-1. Open the OPNsense web GUI: `https://bifrost.itunified.io` (or `https://10.10.0.1`)
+1. Open the OPNsense web GUI (e.g., `https://your-opnsense.example.com`)
 2. Navigate to **System > Settings > Administration**
 3. Under **Web GUI > SSL Certificate**, select the desired certificate from the dropdown
 4. Click **Save**

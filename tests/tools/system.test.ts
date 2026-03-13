@@ -34,11 +34,11 @@ describe('System Tool Definitions', () => {
 describe('handleSystemTool', () => {
   it('gets system info', async () => {
     const client = mockClient({
-      get: vi.fn().mockResolvedValue({ hostname: 'bifrost', uptime: '5d' }),
+      get: vi.fn().mockResolvedValue({ hostname: 'fw-test', uptime: '5d' }),
     });
 
     const result = await handleSystemTool('opnsense_sys_info', {}, client);
-    expect(result.content[0].text).toContain('bifrost');
+    expect(result.content[0].text).toContain('fw-test');
     expect(client.get).toHaveBeenCalledWith('/core/system/status');
   });
 
@@ -57,7 +57,7 @@ describe('handleSystemTool', () => {
       get: vi.fn().mockResolvedValue({
         rows: [
           { refid: '674eb8952f75f', descr: 'Self-signed cert' },
-          { refid: '69b4367c83731', descr: 'bifrost.itunified.io (ACME)' },
+          { refid: '69b4367c83731', descr: 'fw.example.com (ACME)' },
         ],
       }),
     });

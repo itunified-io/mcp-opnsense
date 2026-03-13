@@ -150,11 +150,11 @@ describe('handleAcmeTool', () => {
 
   it('lists certificates', async () => {
     const client = mockClient({
-      get: vi.fn().mockResolvedValue({ rows: [{ name: 'bifrost.itunified.io', statusCode: '200' }] }),
+      get: vi.fn().mockResolvedValue({ rows: [{ name: 'fw.example.com', statusCode: '200' }] }),
     });
 
     const result = await handleAcmeTool('opnsense_acme_list_certs', {}, client);
-    expect(result.content[0].text).toContain('bifrost');
+    expect(result.content[0].text).toContain('fw.example.com');
     expect(client.get).toHaveBeenCalledWith('/acmeclient/certificates/search');
   });
 
@@ -164,8 +164,8 @@ describe('handleAcmeTool', () => {
     });
 
     const result = await handleAcmeTool('opnsense_acme_create_cert', {
-      name: 'bifrost.itunified.io',
-      alt_names: 'bifrost.itunified.io,*.itunified.io',
+      name: 'fw.example.com',
+      alt_names: 'fw.example.com,*.example.com',
       account_uuid: '550e8400-e29b-41d4-a716-446655440000',
       validation_uuid: '660e8400-e29b-41d4-a716-446655440000',
     }, client);
@@ -173,7 +173,7 @@ describe('handleAcmeTool', () => {
     expect(result.content[0].text).toContain('cert-uuid');
     expect(client.post).toHaveBeenCalledWith('/acmeclient/certificates/add', expect.objectContaining({
       certificate: expect.objectContaining({
-        name: 'bifrost.itunified.io',
+        name: 'fw.example.com',
         keyLength: 'key_ec256', // mapped from ec256 → key_ec256
         autoRenewal: '1',
       }),
@@ -263,13 +263,13 @@ describe('handleAcmeTool', () => {
 
     const result = await handleAcmeTool('opnsense_acme_add_account', {
       name: "Let's Encrypt Production",
-      email: 'admin@itunified.io',
+      email: 'admin@example.com',
     }, client);
 
     expect(result.content[0].text).toContain('account-uuid');
     expect(client.post).toHaveBeenCalledWith('/acmeclient/accounts/add', expect.objectContaining({
       account: expect.objectContaining({
-        email: 'admin@itunified.io',
+        email: 'admin@example.com',
         ca: 'letsencrypt',
       }),
     }));
@@ -282,7 +282,7 @@ describe('handleAcmeTool', () => {
 
     const result = await handleAcmeTool('opnsense_acme_add_account', {
       name: 'LE Staging',
-      email: 'test@itunified.io',
+      email: 'test@example.com',
       ca: 'letsencrypt-staging',
     }, client);
 

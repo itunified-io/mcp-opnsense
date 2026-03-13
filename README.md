@@ -37,7 +37,7 @@ Add to `.mcp.json` in your project root:
       "command": "node",
       "args": ["/path/to/mcp-opnsense/dist/index.js"],
       "env": {
-        "OPNSENSE_URL": "https://10.10.0.1",
+        "OPNSENSE_URL": "https://your-opnsense.example.com",
         "OPNSENSE_API_KEY": "your-api-key",
         "OPNSENSE_API_SECRET": "your-api-secret",
         "OPNSENSE_VERIFY_SSL": "true"
@@ -51,7 +51,7 @@ Add to `.mcp.json` in your project root:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `OPNSENSE_URL` | Yes | — | OPNsense base URL (e.g. `https://10.10.0.1`) |
+| `OPNSENSE_URL` | Yes | — | OPNsense base URL (e.g. `https://192.168.1.1`) |
 | `OPNSENSE_API_KEY` | Yes | — | API key for authentication |
 | `OPNSENSE_API_SECRET` | Yes | — | API secret for authentication |
 | `OPNSENSE_VERIFY_SSL` | No | `true` | Set to `false` for self-signed certificates |

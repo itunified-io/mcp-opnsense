@@ -8,7 +8,7 @@ describe('OPNsenseClient', () => {
     });
 
     it('creates client from environment variables', () => {
-      vi.stubEnv('OPNSENSE_URL', 'https://10.10.0.1');
+      vi.stubEnv('OPNSENSE_URL', 'https://192.168.1.1');
       vi.stubEnv('OPNSENSE_API_KEY', 'test-key');
       vi.stubEnv('OPNSENSE_API_SECRET', 'test-secret');
 
@@ -25,7 +25,7 @@ describe('OPNsenseClient', () => {
     });
 
     it('throws when OPNSENSE_API_KEY is missing', () => {
-      vi.stubEnv('OPNSENSE_URL', 'https://10.10.0.1');
+      vi.stubEnv('OPNSENSE_URL', 'https://192.168.1.1');
       vi.stubEnv('OPNSENSE_API_SECRET', 'test-secret');
       delete process.env.OPNSENSE_API_KEY;
 
@@ -33,7 +33,7 @@ describe('OPNsenseClient', () => {
     });
 
     it('throws when OPNSENSE_API_SECRET is missing', () => {
-      vi.stubEnv('OPNSENSE_URL', 'https://10.10.0.1');
+      vi.stubEnv('OPNSENSE_URL', 'https://192.168.1.1');
       vi.stubEnv('OPNSENSE_API_KEY', 'test-key');
       delete process.env.OPNSENSE_API_SECRET;
 
@@ -44,7 +44,7 @@ describe('OPNsenseClient', () => {
   describe('constructor', () => {
     it('creates client with default SSL and timeout', () => {
       const client = new OPNsenseClient({
-        url: 'https://10.10.0.1',
+        url: 'https://192.168.1.1',
         apiKey: 'key',
         apiSecret: 'secret',
       });
@@ -53,7 +53,7 @@ describe('OPNsenseClient', () => {
 
     it('creates client with custom SSL and timeout', () => {
       const client = new OPNsenseClient({
-        url: 'https://10.10.0.1',
+        url: 'https://192.168.1.1',
         apiKey: 'key',
         apiSecret: 'secret',
         verifySsl: false,
