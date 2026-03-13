@@ -60,6 +60,14 @@ docs/
 - **Error handling**: No credential leaks in error messages
 - **Credentials**: Never hardcoded, never logged, never in git
 
+## Design/Plan Documents — MANDATORY
+
+- **Every significant change MUST have a design/plan document** in `docs/plans/`
+- Naming: `docs/plans/<NNN>-<short-description>.md`
+- The design doc MUST be referenced in the corresponding GitHub issue (bidirectional link)
+- Design docs contain: problem, solution, prerequisites, execution steps, rollback, verification
+- Trivial changes (typos, minor doc updates) are exempt
+
 ## CHANGELOG.md — MANDATORY
 
 - **`CHANGELOG.md` MUST exist and MUST be kept up to date**
