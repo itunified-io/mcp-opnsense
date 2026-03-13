@@ -13,8 +13,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('System Tool Definitions', () => {
-  it('exports 5 tool definitions', () => {
-    expect(systemToolDefinitions).toHaveLength(5);
+  it('exports 7 tool definitions', () => {
+    expect(systemToolDefinitions).toHaveLength(7);
   });
 
   it('all tools have opnsense_ prefix', () => {
@@ -42,14 +42,49 @@ describe('handleSystemTool', () => {
     expect(client.get).toHaveBeenCalledWith('/core/system/status');
   });
 
-  it('creates a backup', async () => {
+  it('lists backups', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue({
+        items: [{ id: 'config-123.xml', time_iso: '2026-03-13T16:00:00+00:00', description: 'test' }],
+      }),
+    });
+
+    const result = await handleSystemTool('opnsense_sys_backup_list', {}, client);
+    expect(result.content[0].text).toContain('config-123.xml');
+    expect(client.get).toHaveBeenCalledWith('/core/backup/backups/this');
+  });
+
+  it('downloads current config', async () => {
+    const client = mockClient({
+      getRaw: vi.fn().mockResolvedValue('<opnsense><system></system></opnsense>'),
+    });
+
+    const result = await handleSystemTool('opnsense_sys_backup_download', {}, client);
+    expect(result.content[0].text).toContain('<opnsense>');
+    expect(client.getRaw).toHaveBeenCalledWith('/core/backup/download/this');
+  });
+
+  it('downloads specific backup by id', async () => {
+    const client = mockClient({
+      getRaw: vi.fn().mockResolvedValue('<opnsense></opnsense>'),
+    });
+
+    const result = await handleSystemTool('opnsense_sys_backup_download', {
+      backup_id: 'config-123.xml',
+    }, client);
+    expect(client.getRaw).toHaveBeenCalledWith('/core/backup/download/this/config-123.xml');
+  });
+
+  it('reverts to a backup', async () => {
     const client = mockClient({
       post: vi.fn().mockResolvedValue({ status: 'ok' }),
     });
 
-    const result = await handleSystemTool('opnsense_sys_backup', {}, client);
+    const result = await handleSystemTool('opnsense_sys_backup_revert', {
+      backup_id: 'config-123.xml',
+    }, client);
     expect(result.content[0].text).toContain('ok');
-    expect(client.post).toHaveBeenCalledWith('/core/backup/backup');
+    expect(client.post).toHaveBeenCalledWith('/core/backup/revertBackup/config-123.xml');
   });
 
   it('lists certificates from trust store', async () => {

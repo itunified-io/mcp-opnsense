@@ -6,14 +6,14 @@ Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense R
 
 ## Features
 
-60 tools across 8 domains:
+62 tools across 8 domains:
 
 - **DNS/Unbound** (12) — Host overrides, forwards, blocklist, cache management
 - **Firewall** (8) — Rules, aliases, NAT, apply changes
 - **Diagnostics** (8) — ARP, routes, ping, traceroute, DNS lookup, firewall states/logs
 - **Interfaces** (3) — List, configuration, statistics (read-only)
 - **DHCP** (5) — Leases, static mappings (ISC DHCPv4 + Kea dual support)
-- **System** (5) — Info, backup, certificate listing, service control
+- **System** (7) — Info, backup (list/download/revert), certificate listing, service control
 - **ACME/Let's Encrypt** (14) — Accounts, challenges, certificates, renewal, settings
 - **Firmware/Plugins** (5) — Version info, plugin management
 
@@ -57,7 +57,7 @@ Add to `.mcp.json` in your project root:
 | `OPNSENSE_VERIFY_SSL` | No | `true` | Set to `false` for self-signed certificates |
 | `OPNSENSE_TIMEOUT` | No | `30000` | Request timeout in milliseconds |
 
-## Available Tools (60)
+## Available Tools (62)
 
 ### DNS/Unbound (12 tools)
 
@@ -120,12 +120,14 @@ Add to `.mcp.json` in your project root:
 | `opnsense_dhcp_add_static` | Add a static DHCP mapping |
 | `opnsense_dhcp_delete_static` | Delete a static mapping by UUID |
 
-### System (5 tools)
+### System (7 tools)
 
 | Tool | Description |
 |------|-------------|
 | `opnsense_sys_info` | Get system status (hostname, versions, CPU, memory, uptime, disk) |
-| `opnsense_sys_backup` | Create a configuration backup |
+| `opnsense_sys_backup_list` | List all configuration backups with timestamps and descriptions |
+| `opnsense_sys_backup_download` | Download configuration backup as XML (current or specific) |
+| `opnsense_sys_backup_revert` | Revert to a previous configuration backup (**destructive**) |
 | `opnsense_sys_list_certs` | List all certificates in the trust store |
 | `opnsense_svc_list` | List all services and their running status |
 | `opnsense_svc_control` | Start, stop, or restart a service by name |
@@ -170,6 +172,7 @@ This project includes Claude Code skills that orchestrate multiple MCP tools int
 | `opnsense-firewall-audit` | Auto | Firewall rules security audit (permissive rules, disabled rules, patterns) |
 | `opnsense-service-health` | `/health` | Dashboard-style health overview (system, services, firmware, interfaces) |
 | `opnsense-acme-renew` | `/renew-cert` | ACME certificate status check and renewal |
+| `opnsense-backup` | `/backup` | Configuration backup management (list, download, revert) |
 
 **Auto** skills are triggered automatically by Claude when relevant. **Slash command** skills are invoked explicitly by the user (e.g., `/health`).
 
@@ -180,7 +183,7 @@ Skills are located in `.claude/skills/` and are auto-discovered when this repo i
 Some OPNsense operations are not available via the REST API and require manual GUI access:
 
 - **Web GUI SSL certificate assignment** — `ssl-certref` can only be changed via System > Settings > Administration in the web UI. See [docs/manual-operations.md](docs/manual-operations.md).
-- **Configuration restore/import** — OPNsense has no API to upload/import configuration XML. Only local backup revert is supported.
+- **Configuration upload/import** — OPNsense has no API to upload configuration XML files. Use `opnsense_sys_backup_revert` to revert to local backups, or upload via the web GUI.
 - **User/group management** — Not exposed via REST API.
 - **VPN configuration** — Limited API coverage; most settings require the web UI.
 
