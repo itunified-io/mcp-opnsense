@@ -11,6 +11,7 @@ import { diagnosticsToolDefinitions, handleDiagnosticsTool } from './tools/diagn
 import { interfacesToolDefinitions, handleInterfacesTool } from './tools/interfaces.js';
 import { dhcpToolDefinitions, handleDhcpTool } from './tools/dhcp.js';
 import { systemToolDefinitions, handleSystemTool } from './tools/system.js';
+import { acmeToolDefinitions, handleAcmeTool } from './tools/acme.js';
 
 const allToolDefinitions = [
   ...dnsToolDefinitions,
@@ -19,6 +20,7 @@ const allToolDefinitions = [
   ...interfacesToolDefinitions,
   ...dhcpToolDefinitions,
   ...systemToolDefinitions,
+  ...acmeToolDefinitions,
 ];
 
 const toolHandlers = new Map<
@@ -32,6 +34,7 @@ for (const def of diagnosticsToolDefinitions) toolHandlers.set(def.name, handleD
 for (const def of interfacesToolDefinitions) toolHandlers.set(def.name, handleInterfacesTool);
 for (const def of dhcpToolDefinitions) toolHandlers.set(def.name, handleDhcpTool);
 for (const def of systemToolDefinitions) toolHandlers.set(def.name, handleSystemTool);
+for (const def of acmeToolDefinitions) toolHandlers.set(def.name, handleAcmeTool);
 
 const server = new Server(
   { name: 'mcp-opnsense', version: '2026.3.13' },
