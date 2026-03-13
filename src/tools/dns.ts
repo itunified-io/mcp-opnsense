@@ -30,7 +30,7 @@ const DeleteForwardSchema = z.object({
 
 const BlockDomainSchema = z.object({
   domain: DomainSchema,
-  server: z.string().optional().default(""),
+  server: z.string().optional(),
   description: z.string().optional(),
 });
 
@@ -231,17 +231,23 @@ export async function handleDnsTool(
       }
 
       case "opnsense_dns_list_blocklist": {
-        const result = await client.get("/unbound/settings/searchDomainOverride");
+        // OPNsense 24.7+: domain overrides merged into dots model
+        const result = await client.get("/unbound/settings/searchDot");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_dns_block_domain": {
         const parsed = BlockDomainSchema.parse(args);
-        const result = await client.post("/unbound/settings/addDomainOverride", {
-          domain: {
+        // OPNsense 24.7+: domain overrides merged into dots model (type: "forward")
+        const result = await client.post("/unbound/settings/addDot", {
+          dot: {
             enabled: "1",
             domain: parsed.domain,
-            server: parsed.server,
+            server: parsed.server || "127.0.0.1",
+            port: "",
+            verify: "",
+            forward_tcp_upstream: "0",
+            forward_first: "0",
             description: parsed.description ?? "",
           },
         });
@@ -250,7 +256,8 @@ export async function handleDnsTool(
 
       case "opnsense_dns_unblock_domain": {
         const { uuid } = UnblockDomainSchema.parse(args);
-        const result = await client.post(`/unbound/settings/delDomainOverride/${uuid}`);
+        // OPNsense 24.7+: domain overrides merged into dots model
+        const result = await client.post(`/unbound/settings/delDot/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
