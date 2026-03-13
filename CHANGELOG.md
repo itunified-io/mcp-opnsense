@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.15
+
+- Add 5 Claude Code skills for higher-level MCP tool orchestration (#41)
+  - `opnsense-diagnostics` — auto skill for network connectivity diagnostics
+  - `opnsense-dns-management` — auto skill for DNS record management with verification
+  - `opnsense-firewall-audit` — auto skill for firewall security audit
+  - `opnsense-service-health` — `/health` slash command for dashboard-style health overview
+  - `opnsense-acme-renew` — `/renew-cert` slash command for certificate status and renewal
+- Add Claude Code Skills section to README.md (#41)
+- Add skills conventions section to CLAUDE.md (#41)
+
 ## v2026.03.13.14
 
 - Switch license from MIT to AGPL-3.0 + commercial dual license (#39)

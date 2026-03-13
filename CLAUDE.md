@@ -113,6 +113,46 @@ docs/
 - Bug fix commits must reference the issue: `fix: <description> (#<nr>)`
 - CHANGELOG entry required for every bug fix
 
+## Claude Code Skills
+
+Skills are higher-level workflow orchestrations that compose multiple MCP tools into structured task flows. They live in `.claude/skills/<name>/SKILL.md`.
+
+### Location Policy
+- **Skills MUST live in the MCP server repo** (this repo), NOT in private infrastructure repos
+- Skills are public and reusable by any user of the MCP server
+- See [ADR-0005](https://github.com/itunified-io/infrastructure) in the infrastructure repo for the architectural decision
+
+### Skill Structure
+```
+.claude/skills/
+  <skill-name>/
+    SKILL.md          # Skill definition with YAML frontmatter
+```
+
+### YAML Frontmatter
+```yaml
+---
+name: skill-name
+description: One-line description of what the skill does
+disable-model-invocation: true   # Optional: makes it user-only (slash command)
+---
+```
+
+### Skill Types
+- **Auto (Claude-invocable)**: Omit `disable-model-invocation` — Claude triggers automatically when relevant
+- **User-invocable (slash command)**: Set `disable-model-invocation: true` — user runs via `/command`
+
+### Naming Convention
+- Skill directory: `opnsense-<purpose>` (e.g., `opnsense-diagnostics`, `opnsense-service-health`)
+- Slash commands: short, memorable (e.g., `/health`, `/renew-cert`)
+
+### Skill Design Guidelines
+- Each skill MUST specify which MCP tools it uses
+- Workflow steps should maximize parallel tool calls for speed
+- Read-only skills (audits, health checks) MUST NOT modify configuration
+- Destructive actions MUST ask for user confirmation
+- Output should be structured (tables, sections) for quick scanning
+
 ## Language
 
 - All documentation, code comments, commit messages: **English only**
