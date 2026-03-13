@@ -115,7 +115,7 @@ export async function handleDhcpTool(
       }
 
       case "opnsense_dhcp_list_static": {
-        // OPNsense 24.7+: ISC DHCP static maps removed, use Kea reservations
+        // OPNsense 24.7+: Kea DHCP reservations
         const result = await client.get("/kea/dhcpv4/search_reservation");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
@@ -124,14 +124,12 @@ export async function handleDhcpTool(
         const parsed = AddStaticMapSchema.parse(args);
 
         // OPNsense 24.7+: Kea requires a subnet UUID for reservations
-        // Auto-discover the matching subnet for the given IP
         const subnets = await client.get<{
           rows?: Array<{ uuid: string; subnet: string }>;
         }>("/kea/dhcpv4/search_subnet");
 
         let subnetUuid = "";
         for (const s of subnets.rows ?? []) {
-          // subnet format: "10.10.0.0/24" — check if IP falls within
           const [network, bits] = s.subnet.split("/");
           if (network && bits) {
             const netParts = network.split(".").map(Number);
@@ -151,7 +149,7 @@ export async function handleDhcpTool(
           return {
             content: [{
               type: "text",
-              text: `No Kea DHCP subnet found for IP ${parsed.ipaddr}. Available subnets: ${available || "none"}`,
+              text: `No Kea DHCP subnet found for IP ${parsed.ipaddr}. Available subnets: ${available || "none"}. Kea DHCP must be configured with at least one subnet to manage static reservations.`,
             }],
           };
         }
@@ -170,7 +168,7 @@ export async function handleDhcpTool(
 
       case "opnsense_dhcp_delete_static": {
         const { uuid } = DeleteStaticMapSchema.parse(args);
-        // OPNsense 24.7+: use Kea DHCP reservation API
+        // OPNsense 24.7+: Kea DHCP reservations
         const result = await client.post(`/kea/dhcpv4/del_reservation/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }

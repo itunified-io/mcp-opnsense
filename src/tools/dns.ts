@@ -30,7 +30,7 @@ const DeleteForwardSchema = z.object({
 
 const BlockDomainSchema = z.object({
   domain: DomainSchema,
-  server: z.string().optional().default(""),
+  server: z.string().optional(),
   description: z.string().optional(),
 });
 
@@ -231,22 +231,23 @@ export async function handleDnsTool(
       }
 
       case "opnsense_dns_list_blocklist": {
-        // OPNsense 24.7+: domain overrides renamed to forwards
-        const result = await client.get("/unbound/settings/searchForward");
+        // OPNsense 24.7+: domain overrides merged into dots model
+        const result = await client.get("/unbound/settings/searchDot");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_dns_block_domain": {
         const parsed = BlockDomainSchema.parse(args);
-        // OPNsense 24.7+: use forward entries (domain overrides renamed to forwards)
-        const result = await client.post("/unbound/settings/addForward", {
-          forward: {
+        // OPNsense 24.7+: domain overrides merged into dots model (type: "forward")
+        const result = await client.post("/unbound/settings/addDot", {
+          dot: {
             enabled: "1",
             domain: parsed.domain,
             server: parsed.server || "127.0.0.1",
-            port: "53",
+            port: "",
             verify: "",
             forward_tcp_upstream: "0",
+            forward_first: "0",
             description: parsed.description ?? "",
           },
         });
@@ -255,8 +256,8 @@ export async function handleDnsTool(
 
       case "opnsense_dns_unblock_domain": {
         const { uuid } = UnblockDomainSchema.parse(args);
-        // OPNsense 24.7+: domain overrides renamed to forwards
-        const result = await client.post(`/unbound/settings/delForward/${uuid}`);
+        // OPNsense 24.7+: domain overrides merged into dots model
+        const result = await client.post(`/unbound/settings/delDot/${uuid}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
