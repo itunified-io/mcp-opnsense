@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.11
+
+- Remove broken `opnsense_sys_set_webgui_cert` tool — OPNsense has no config restore/import API (#33)
+- Remove broken `opnsense_sys_restore` tool — `/core/backup/restore` endpoint does not exist (#33)
+- Keep `opnsense_sys_list_certs` tool (works correctly)
+- Keep `getRaw()` client method (useful for future XML responses)
+- Total: 60 tools, 65 tests
+
 ## v2026.03.13.10
 
 - Add `opnsense_sys_set_webgui_cert` tool: assign SSL cert to web GUI via config backup/restore (#29)
