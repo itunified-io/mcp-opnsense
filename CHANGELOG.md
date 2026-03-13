@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.17
+
+- Fix 7 OPNsense 24.7 API compatibility issues discovered during live testing (#45, #46, #47, #48, #49, #50, #51):
+  - `opnsense_diag_ping`: migrate to job-based API (set→start→poll→remove) (#45)
+  - `opnsense_diag_traceroute`: use synchronous POST to `/diagnostics/traceroute/set` (#46)
+  - `opnsense_diag_dns_lookup`: use `reverse_lookup` endpoint (forward DNS API removed in 24.7) (#47)
+  - `opnsense_diag_fw_states`: use `query_states` endpoint (old endpoint removed) (#48)
+  - `opnsense_dhcp_*`: migrate to Kea DHCP API with subnet auto-discovery (#49)
+  - `opnsense_if_get`: fix device↔friendly name mapping from `getInterfaceNames` (#50)
+  - `opnsense_dns_block/unblock/list_blocklist`: use dots model (addDot/delDot/searchDot) — domain overrides merged into dots in 24.7 (#51)
+- Add new `opnsense_diag_reverse_dns` tool for IP→hostname lookups (#47)
+
 ## v2026.03.13.16
 
 - Replace broken `opnsense_sys_backup` with 3 new backup tools (#43):
