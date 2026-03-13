@@ -13,8 +13,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('System Tool Definitions', () => {
-  it('exports 7 tool definitions', () => {
-    expect(systemToolDefinitions).toHaveLength(7);
+  it('exports 5 tool definitions', () => {
+    expect(systemToolDefinitions).toHaveLength(5);
   });
 
   it('all tools have opnsense_ prefix', () => {
@@ -42,6 +42,16 @@ describe('handleSystemTool', () => {
     expect(client.get).toHaveBeenCalledWith('/core/system/status');
   });
 
+  it('creates a backup', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ status: 'ok' }),
+    });
+
+    const result = await handleSystemTool('opnsense_sys_backup', {}, client);
+    expect(result.content[0].text).toContain('ok');
+    expect(client.post).toHaveBeenCalledWith('/core/backup/backup');
+  });
+
   it('lists certificates from trust store', async () => {
     const client = mockClient({
       get: vi.fn().mockResolvedValue({
@@ -56,84 +66,6 @@ describe('handleSystemTool', () => {
     expect(result.content[0].text).toContain('674eb8952f75f');
     expect(result.content[0].text).toContain('69b4367c83731');
     expect(client.get).toHaveBeenCalledWith('/trust/cert/search');
-  });
-
-  it('sets webgui cert successfully', async () => {
-    const configXml = '<opnsense><system><webgui><ssl-certref>old-ref</ssl-certref></webgui></system></opnsense>';
-    const getRaw = vi.fn().mockResolvedValue(configXml);
-    const get = vi.fn()
-      .mockResolvedValueOnce({
-        rows: [
-          { refid: 'old-ref', descr: 'Old cert' },
-          { refid: 'new-ref', descr: 'New ACME cert' },
-        ],
-      });
-    const post = vi.fn().mockResolvedValue({ status: 'ok' });
-
-    const client = mockClient({ get, getRaw, post });
-
-    const result = await handleSystemTool('opnsense_sys_set_webgui_cert', {
-      cert_refid: 'new-ref',
-      confirm: true,
-    }, client);
-
-    expect(result.content[0].text).toContain('new-ref');
-    expect(result.content[0].text).toContain('New ACME cert');
-
-    // Verify backup was downloaded
-    expect(getRaw).toHaveBeenCalledWith('/core/backup/download/this');
-
-    // Verify modified config was restored with new refid
-    expect(post).toHaveBeenCalledWith('/core/backup/restore', {
-      backupdata: expect.stringContaining('<ssl-certref>new-ref</ssl-certref>'),
-    });
-
-    // Verify webgui restart was triggered
-    expect(post).toHaveBeenCalledWith('/core/service/restart/webgui');
-  });
-
-  it('rejects webgui cert if refid not found', async () => {
-    const client = mockClient({
-      get: vi.fn().mockResolvedValue({
-        rows: [{ refid: 'existing-ref', descr: 'Existing cert' }],
-      }),
-    });
-
-    const result = await handleSystemTool('opnsense_sys_set_webgui_cert', {
-      cert_refid: 'nonexistent-ref',
-      confirm: true,
-    }, client);
-
-    expect(result.content[0].text).toContain('not found');
-    expect(result.content[0].text).toContain('existing-ref');
-  });
-
-  it('skips if webgui already uses the requested cert', async () => {
-    const configXml = '<opnsense><system><webgui><ssl-certref>same-ref</ssl-certref></webgui></system></opnsense>';
-    const client = mockClient({
-      get: vi.fn().mockResolvedValue({
-        rows: [{ refid: 'same-ref', descr: 'Current cert' }],
-      }),
-      getRaw: vi.fn().mockResolvedValue(configXml),
-    });
-
-    const result = await handleSystemTool('opnsense_sys_set_webgui_cert', {
-      cert_refid: 'same-ref',
-      confirm: true,
-    }, client);
-
-    expect(result.content[0].text).toContain('already uses');
-  });
-
-  it('requires confirm=true for webgui cert change', async () => {
-    const client = mockClient();
-
-    const result = await handleSystemTool('opnsense_sys_set_webgui_cert', {
-      cert_refid: 'new-ref',
-      confirm: false,
-    }, client);
-
-    expect(result.content[0].text).toContain('Error');
   });
 
   it('lists services', async () => {
