@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.13.16
+
+- Replace broken `opnsense_sys_backup` with 3 new backup tools (#43):
+  - `opnsense_sys_backup_list` — list all configuration backups with timestamps
+  - `opnsense_sys_backup_download` — download config XML (current or specific backup)
+  - `opnsense_sys_backup_revert` — revert to a previous backup (destructive)
+- Add `/backup` slash command skill for configuration backup management (#43)
+- Fix: old `POST /core/backup/backup` endpoint no longer exists in OPNsense 24.7
+- Update tool count from 60 to 62, test count to 68
+
 ## v2026.03.13.15
 
 - Add 5 Claude Code skills for higher-level MCP tool orchestration (#41)
