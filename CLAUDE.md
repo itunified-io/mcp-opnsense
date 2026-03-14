@@ -120,6 +120,11 @@ docs/
 - **Commit messages**: must reference GH issue — `feat: add DNS override tool (#12)` or `fix: handle SSL timeout (#5)`
 - **No commit without issue reference** (exceptions: initial setup, typo fixes)
 - **PR workflow**: feature branch -> `gh pr create` -> review -> merge into main
+- **Acceptance Criteria Gate — MANDATORY** (see [ADR-0017](https://github.com/itunified-io/infrastructure/blob/main/docs/adr/0017-acceptance-criteria-before-merge.md)):
+  - All acceptance criteria in the associated GH issue MUST be checked and verified as successful before merge to `main`
+  - Verification is active: criteria must be actually tested, not assumed to pass
+  - Includes: tests pass (`npm test`), build succeeds (`npm run build`), live tests pass (`/opn-test`), CHANGELOG updated, docs updated
+  - If any criterion cannot be satisfied, the PR must NOT be merged
 - **After PR merge: branch/worktree cleanup is mandatory** — `git branch -d <branch>`, `git remote prune origin`, remove worktree. Prevents drift.
 
 ### Bug Fixes — MANDATORY Workflow
