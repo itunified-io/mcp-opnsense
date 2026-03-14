@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.14.1
+
+- Rename slash commands per ADR-0010 naming convention (#57):
+  - `/health` → `/opn-health`
+  - `/backup` → `/opn-backup`
+  - `/renew-cert` → `/opn-renew-cert`
+- Update CLAUDE.md naming convention to document `/<system-short>-<action>` pattern
+
 ## v2026.03.13.19
 
 - Fix SECURITY.md: replace internal Slack email with GitHub Security Advisories (#55)

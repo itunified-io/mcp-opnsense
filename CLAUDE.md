@@ -159,7 +159,7 @@ disable-model-invocation: true   # Optional: makes it user-only (slash command)
 
 ### Naming Convention
 - Skill directory: `opnsense-<purpose>` (e.g., `opnsense-diagnostics`, `opnsense-service-health`)
-- Slash commands: short, memorable (e.g., `/health`, `/renew-cert`)
+- Slash commands: `/<system-short>-<action>` — use `opn` prefix (e.g., `/opn-health`, `/opn-backup`, `/opn-renew-cert`)
 
 ### Skill Design Guidelines
 - Each skill MUST specify which MCP tools it uses

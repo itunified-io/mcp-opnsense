@@ -1,10 +1,10 @@
 ---
-name: opnsense-acme-renew
+name: opn-renew-cert
 description: Check ACME certificate expiry and renew if needed — lists all certs, shows days remaining, triggers renewal
 disable-model-invocation: true
 ---
 
-# OPNsense ACME Certificate Renewal (/renew-cert)
+# OPNsense ACME Certificate Renewal (/opn-renew-cert)
 
 Check ACME certificate status and renew certificates approaching expiry.
 
