@@ -17,3 +17,6 @@ dist/
 
 # Test coverage
 coverage/
+
+# Superpowers plugin working artifacts (ADR-0021)
+docs/superpowers/
