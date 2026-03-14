@@ -181,22 +181,19 @@ Add to `.mcp.json` in your project root:
 | `opnsense_firmware_install` | Install an OPNsense plugin package |
 | `opnsense_firmware_remove` | Remove a plugin package (requires confirmation) |
 
-## Claude Code Skills
+## Skills
 
-This project includes Claude Code skills that orchestrate multiple MCP tools into higher-level workflows:
+Claude Code skills compose MCP tools into higher-level workflows. See [`.claude/skills/README.md`](.claude/skills/README.md) for detailed documentation.
 
-| Skill | Type | Description |
-|-------|------|-------------|
-| `opnsense-diagnostics` | Auto | Network connectivity diagnostics (ping, traceroute, DNS, ARP, FW logs) |
-| `opnsense-dns-management` | Auto | DNS record management with verification (add, delete, apply, verify) |
-| `opnsense-firewall-audit` | Auto | Firewall rules security audit (permissive rules, disabled rules, patterns) |
-| `opnsense-service-health` | `/health` | Dashboard-style health overview (system, services, firmware, interfaces) |
-| `opnsense-acme-renew` | `/renew-cert` | ACME certificate status check and renewal |
-| `opnsense-backup` | `/backup` | Configuration backup management (list, download, revert) |
-
-**Auto** skills are triggered automatically by Claude when relevant. **Slash command** skills are invoked explicitly by the user (e.g., `/health`).
-
-Skills are located in `.claude/skills/` and are auto-discovered when this repo is used as an MCP server.
+| Skill | Slash Command | Description |
+|-------|--------------|-------------|
+| opnsense-service-health | `/opn-health` | Health dashboard — system status, services, firmware, interfaces |
+| opnsense-acme-renew | `/opn-renew-cert` | ACME certificate status check and renewal |
+| opnsense-backup | `/opn-backup` | Configuration backup management — list, download, revert |
+| opnsense-live-test | `/opn-test` | Live integration test — read + safe writes with cleanup |
+| opnsense-diagnostics | — | Network connectivity diagnostics — ping, traceroute, DNS, ARP |
+| opnsense-dns-management | — | DNS record management — add, delete, apply, verify resolution |
+| opnsense-firewall-audit | — | Firewall security audit — permissive rules, disabled rules, patterns |
 
 ## Known Limitations
 
