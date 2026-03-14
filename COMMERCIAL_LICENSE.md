@@ -20,7 +20,7 @@ You likely need a commercial license if:
 
 ## When You Do NOT Need a Commercial License
 
-- **Personal or internal use** — using the software as-is within your organization
+- **Personal or non-commercial use** — using the software for personal projects or non-commercial purposes
 - **Open-source projects** — integrating with other AGPL-3.0 or compatible open-source projects
 - **Unmodified use** — running the unmodified MCP server to manage your own OPNsense firewall
 
@@ -36,10 +36,10 @@ Commercial licenses are priced based on scope and usage. Sponsoring the project 
 ## FAQ
 
 **Q: Can I use mcp-opnsense for free in my company?**
-A: Yes, as long as you comply with the AGPL-3.0 license terms (including making source code available if you modify it or offer it as a network service).
+A: If your company uses mcp-opnsense internally as part of commercial operations, you need either full AGPL-3.0 compliance (which means releasing your complete source code under AGPL-3.0) or a commercial license. Free use under AGPL-3.0 is intended for open-source and non-commercial purposes.
 
 **Q: Does the AGPL apply if I just run the MCP server internally?**
-A: Running the unmodified server internally for your own use does not trigger the AGPL network service clause. You do not need a commercial license for this use case.
+A: Running the server internally within a commercial organization still means you are subject to the AGPL-3.0 license terms. If your organization cannot comply with AGPL-3.0 (e.g., releasing source code of any modifications or derivative works), you need a commercial license. The AGPL's network service clause is only one aspect — commercial use within an organization that cannot meet AGPL obligations requires a commercial license.
 
 **Q: What if I build a product that includes mcp-opnsense?**
 A: If your product is proprietary (closed-source), you need a commercial license. If your product is also AGPL-3.0 licensed, you can use it under the open-source license.
