@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.14.3
+
+- Clarify license: internal/commercial use requires commercial license (#63)
+
 ## v2026.03.14.2
 
 - Fix `dhcp_list_static`, `dhcp_add_static`, `dhcp_delete_static` failing on ISC DHCP (non-Kea) installations (#61)
