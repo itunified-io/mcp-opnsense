@@ -1,10 +1,10 @@
 ---
-name: opnsense-service-health
+name: opn-health
 description: Dashboard-style health overview of the OPNsense firewall — system status, services, firmware, interfaces, DHCP
 disable-model-invocation: true
 ---
 
-# OPNsense Health Check (/health)
+# OPNsense Health Check (/opn-health)
 
 Produce a dashboard-style health overview of the OPNsense firewall.
 

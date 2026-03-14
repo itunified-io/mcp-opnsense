@@ -1,10 +1,10 @@
 ---
-name: opnsense-backup
+name: opn-backup
 description: OPNsense configuration backup management — list, download, and revert backups
 disable-model-invocation: true
 ---
 
-# /backup — OPNsense Configuration Backup
+# /opn-backup — OPNsense Configuration Backup
 
 Manage OPNsense configuration backups: list available backups, download config XML, and revert to a previous configuration.
 
