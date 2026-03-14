@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.14.4
+
+- Add acceptance criteria gate to CLAUDE.md PR Workflow (ADR-0017) (#65)
+
 ## v2026.03.14.3
 
 - Clarify license: internal/commercial use requires commercial license (#63)
