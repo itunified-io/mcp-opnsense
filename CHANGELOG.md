@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.14.2
+
+- Fix `dhcp_list_static`, `dhcp_add_static`, `dhcp_delete_static` failing on ISC DHCP (non-Kea) installations (#61)
+- Add automatic DHCP backend detection: try Kea API first, fall back to ISC legacy API
+- ISC DHCP uses `/api/dhcpv4/leases/searchStaticMap`, `addStaticMap`, `delStaticMap` endpoints
+- Tool descriptions updated to reflect dual backend support
+
 ## v2026.03.14.1
 
 - Rename slash commands per ADR-0010 naming convention (#57):
