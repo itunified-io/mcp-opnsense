@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test && node scripts/prepublish-check.js"
   },
   "keywords": [
     "mcp",
