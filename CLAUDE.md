@@ -75,6 +75,7 @@ docs/
 - **Error handling**: No credential leaks in error messages
 - **Credentials**: Never hardcoded, never logged, never in git
 - **Secret Redaction — MANDATORY**: When using `grep`, `cat`, `sed`, `awk`, shell scripts, or any tool that reads/displays file contents containing secrets (`.env`, credentials, API keys, tokens, passwords), **ALWAYS redact the secret values** in output. Use patterns like `sed 's/=.*/=<redacted>/'` or equivalent. Never display raw secret values in terminal output, logs, conversation context, or commit messages.
+- **MCP Registry Tokens**: `.mcpregistry_*` files are gitignored (ADR-0024). Never commit registry auth tokens.
 - **Public Repo Documentation Policy — MANDATORY**: This is a **public repository**. All documentation, code examples, test data, and commit messages MUST use only generic placeholders:
   - Hostnames: `your-opnsense.example.com`, `fw.example.com`
   - IPs: `192.168.1.1`, `10.0.0.1` (common private ranges only)
