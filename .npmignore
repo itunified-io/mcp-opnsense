@@ -1,0 +1,29 @@
+# Security — NEVER publish (ADR-0024, ADR-0026)
+.mcpregistry_*
+.env
+.env.*
+*.pem
+*.key
+
+# Source (compiled output in dist/ is included)
+src/
+tests/
+docs/
+scripts/
+
+# Dev/CI config
+.github/
+.claude/
+tsconfig.json
+*.tsbuildinfo
+.eslintcache
+coverage/
+.nyc_output/
+*.tgz
+.DS_Store
+
+# Superpowers
+docs/superpowers/
+
+# Keep example env
+!.env.example
