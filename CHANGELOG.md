@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.16.1
+
+- Add `.mcpregistry_*` to `.gitignore` and update CLAUDE.md security section (ADR-0024) (#76)
+
 ## v2026.03.15.2
 
 - Switch Glama badge from score to card format (#67)
