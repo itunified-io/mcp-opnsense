@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.15.1
+
+- **Add pre-publish security scan** (#78)
+  - Add `scripts/prepublish-check.js` — blocks `npm publish` if forbidden files (`.mcpregistry_*`, `.env`, `.pem`, `.key`, `credentials`) are in the tarball
+  - Add `.npmignore` with comprehensive security exclusions
+  - Add `prepublishOnly` npm hook: build + test + security scan before every publish
+  - Implements ADR-0026
+
 ## v2026.03.16.1
 
 - Add `.mcpregistry_*` to `.gitignore` and update CLAUDE.md security section (ADR-0024) (#76)
