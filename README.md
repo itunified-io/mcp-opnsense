@@ -6,7 +6,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen?style=flat-square)](https://nodejs.org)
 [![MCP Tools](https://img.shields.io/badge/MCP_tools-62-purple?style=flat-square)](#available-tools-62)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square)](https://www.typescriptlang.org/)
-[![Glama](https://glama.ai/mcp/servers/itunified-io/mcp-opnsense/badges/score.svg)](https://glama.ai/mcp/servers/itunified-io/mcp-opnsense)
+[![mcp-opnsense MCP server](https://glama.ai/mcp/servers/itunified-io/mcp-opnsense/badges/card.svg)](https://glama.ai/mcp/servers/itunified-io/mcp-opnsense)
 
 Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense REST API.
 
