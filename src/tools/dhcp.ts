@@ -21,6 +21,26 @@ const DeleteStaticMapSchema = z.object({
   uuid: UuidSchema,
 });
 
+const SubnetSchema = z.object({
+  subnet: z.string().min(1, "Subnet in CIDR notation required (e.g., 10.10.0.0/24)"),
+  pools: z.string().optional().describe("Pool range (e.g., 10.10.0.100-10.10.0.199)"),
+  description: z.string().optional(),
+  option_data_autocollect: z.string().optional().describe("Auto collect option data (0 or 1, default: 1)"),
+  router: z.string().optional().describe("Default gateway IP"),
+  dns_servers: z.string().optional().describe("Comma-separated DNS server IPs"),
+  domain_name: z.string().optional().describe("Domain name for clients"),
+  domain_search: z.string().optional().describe("Domain search list (comma-separated)"),
+  ntp_servers: z.string().optional().describe("Comma-separated NTP server IPs"),
+});
+
+const SubnetUpdateSchema = SubnetSchema.extend({
+  uuid: UuidSchema,
+});
+
+const SubnetDeleteSchema = z.object({
+  uuid: UuidSchema,
+});
+
 // ---------------------------------------------------------------------------
 // DHCP backend detection — Kea vs ISC (legacy)
 // ---------------------------------------------------------------------------
@@ -118,6 +138,77 @@ export const dhcpToolDefinitions = [
       required: ["uuid"],
     },
   },
+  {
+    name: "opnsense_kea_subnet_list",
+    description: "List all Kea DHCPv4 subnets with their pools, options, and reservation counts.",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_kea_subnet_get",
+    description: "Get detailed configuration of a specific Kea DHCPv4 subnet by UUID.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        uuid: { type: "string", description: "Subnet UUID" },
+      },
+      required: ["uuid"],
+    },
+  },
+  {
+    name: "opnsense_kea_subnet_create",
+    description: "Create a new Kea DHCPv4 subnet. Run opnsense_kea_apply afterwards to activate.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        subnet: { type: "string", description: "Subnet in CIDR notation (e.g., 10.10.0.0/24)" },
+        pools: { type: "string", description: "Pool range (e.g., 10.10.0.100-10.10.0.199)" },
+        description: { type: "string", description: "Optional description" },
+        option_data_autocollect: { type: "string", description: "Auto collect option data (0 or 1, default: 1)" },
+        router: { type: "string", description: "Default gateway IP" },
+        dns_servers: { type: "string", description: "Comma-separated DNS server IPs" },
+        domain_name: { type: "string", description: "Domain name for clients" },
+        domain_search: { type: "string", description: "Domain search list (comma-separated)" },
+        ntp_servers: { type: "string", description: "Comma-separated NTP server IPs" },
+      },
+      required: ["subnet"],
+    },
+  },
+  {
+    name: "opnsense_kea_subnet_update",
+    description: "Update an existing Kea DHCPv4 subnet. Run opnsense_kea_apply afterwards to activate.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        uuid: { type: "string", description: "Subnet UUID" },
+        subnet: { type: "string", description: "Subnet in CIDR notation" },
+        pools: { type: "string", description: "Pool range (e.g., 10.10.0.100-10.10.0.199)" },
+        description: { type: "string", description: "Optional description" },
+        option_data_autocollect: { type: "string", description: "Auto collect option data (0 or 1)" },
+        router: { type: "string", description: "Default gateway IP" },
+        dns_servers: { type: "string", description: "Comma-separated DNS server IPs" },
+        domain_name: { type: "string", description: "Domain name for clients" },
+        domain_search: { type: "string", description: "Domain search list (comma-separated)" },
+        ntp_servers: { type: "string", description: "Comma-separated NTP server IPs" },
+      },
+      required: ["uuid", "subnet"],
+    },
+  },
+  {
+    name: "opnsense_kea_subnet_delete",
+    description: "Delete a Kea DHCPv4 subnet by UUID. Run opnsense_kea_apply afterwards to activate.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        uuid: { type: "string", description: "Subnet UUID to delete" },
+      },
+      required: ["uuid"],
+    },
+  },
+  {
+    name: "opnsense_kea_apply",
+    description: "Apply pending Kea DHCP configuration changes (reconfigure service). Run after subnet or reservation changes.",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -182,6 +273,80 @@ async function keaDeleteStatic(
   uuid: string,
 ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
   const result = await client.post(`/kea/dhcpv4/del_reservation/${uuid}`);
+  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+}
+
+// ---------------------------------------------------------------------------
+// Kea DHCP subnet helpers
+// ---------------------------------------------------------------------------
+
+async function keaListSubnets(
+  client: OPNsenseClient,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const result = await client.get("/kea/dhcpv4/search_subnet");
+  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+}
+
+async function keaGetSubnet(
+  client: OPNsenseClient,
+  uuid: string,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const result = await client.get(`/kea/dhcpv4/get_subnet/${uuid}`);
+  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+}
+
+async function keaAddSubnet(
+  client: OPNsenseClient,
+  parsed: z.infer<typeof SubnetSchema>,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const subnet: Record<string, string> = {
+    subnet: parsed.subnet,
+  };
+  if (parsed.pools) subnet.pools = parsed.pools;
+  if (parsed.description) subnet.description = parsed.description;
+  if (parsed.option_data_autocollect) subnet.option_data_autocollect = parsed.option_data_autocollect;
+  if (parsed.router) subnet.option_routers = parsed.router;
+  if (parsed.dns_servers) subnet.option_domain_name_servers = parsed.dns_servers;
+  if (parsed.domain_name) subnet.option_domain_name = parsed.domain_name;
+  if (parsed.domain_search) subnet.option_domain_search = parsed.domain_search;
+  if (parsed.ntp_servers) subnet.option_ntp_servers = parsed.ntp_servers;
+
+  const result = await client.post("/kea/dhcpv4/add_subnet", { subnet });
+  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+}
+
+async function keaUpdateSubnet(
+  client: OPNsenseClient,
+  parsed: z.infer<typeof SubnetUpdateSchema>,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const subnet: Record<string, string> = {
+    subnet: parsed.subnet,
+  };
+  if (parsed.pools !== undefined) subnet.pools = parsed.pools;
+  if (parsed.description !== undefined) subnet.description = parsed.description;
+  if (parsed.option_data_autocollect !== undefined) subnet.option_data_autocollect = parsed.option_data_autocollect;
+  if (parsed.router !== undefined) subnet.option_routers = parsed.router;
+  if (parsed.dns_servers !== undefined) subnet.option_domain_name_servers = parsed.dns_servers;
+  if (parsed.domain_name !== undefined) subnet.option_domain_name = parsed.domain_name;
+  if (parsed.domain_search !== undefined) subnet.option_domain_search = parsed.domain_search;
+  if (parsed.ntp_servers !== undefined) subnet.option_ntp_servers = parsed.ntp_servers;
+
+  const result = await client.post(`/kea/dhcpv4/set_subnet/${parsed.uuid}`, { subnet });
+  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+}
+
+async function keaDeleteSubnet(
+  client: OPNsenseClient,
+  uuid: string,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const result = await client.post(`/kea/dhcpv4/del_subnet/${uuid}`);
+  return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+}
+
+async function keaApply(
+  client: OPNsenseClient,
+): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const result = await client.post("/kea/service/reconfigure");
   return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
 }
 
@@ -268,6 +433,32 @@ export async function handleDhcpTool(
         }
         return await iscDeleteStatic(client, uuid);
       }
+
+      case "opnsense_kea_subnet_list":
+        return await keaListSubnets(client);
+
+      case "opnsense_kea_subnet_get": {
+        const { uuid } = z.object({ uuid: UuidSchema }).parse(args);
+        return await keaGetSubnet(client, uuid);
+      }
+
+      case "opnsense_kea_subnet_create": {
+        const parsed = SubnetSchema.parse(args);
+        return await keaAddSubnet(client, parsed);
+      }
+
+      case "opnsense_kea_subnet_update": {
+        const parsed = SubnetUpdateSchema.parse(args);
+        return await keaUpdateSubnet(client, parsed);
+      }
+
+      case "opnsense_kea_subnet_delete": {
+        const { uuid } = SubnetDeleteSchema.parse(args);
+        return await keaDeleteSubnet(client, uuid);
+      }
+
+      case "opnsense_kea_apply":
+        return await keaApply(client);
 
       default:
         return {
