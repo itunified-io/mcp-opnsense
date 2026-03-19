@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.19.1
+
+- **Add 7 Kea DHCPv4 subnet management tools** (#82)
+  - `opnsense_kea_subnet_list` — list all Kea DHCP subnets
+  - `opnsense_kea_subnet_get` — get details for a specific subnet
+  - `opnsense_kea_subnet_create` — create a new Kea subnet with pools and options
+  - `opnsense_kea_subnet_update` — update an existing Kea subnet
+  - `opnsense_kea_subnet_delete` — delete a Kea subnet
+  - `opnsense_kea_apply` — apply Kea DHCP configuration changes
+  - Zod validation schemas: SubnetSchema, SubnetUpdateSchema, SubnetDeleteSchema
+  - Total: 68 tools
+
 ## v2026.03.16.2
 
 - **Add pre-publish security scan** (#78)
