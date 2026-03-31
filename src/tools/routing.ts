@@ -170,7 +170,7 @@ export async function handleRoutingTool(
       }
 
       case "opnsense_route_gateway_list": {
-        const result = await client.get("/routes/gateway/searchGateway");
+        const result = await client.get("/routing/settings/searchGateway");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
