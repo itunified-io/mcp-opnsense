@@ -215,3 +215,11 @@ This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 - System tools (5 tools) — #7
 - Shared Zod validation schemas (IP, UUID, CIDR, hostname, etc.)
 - 16 unit tests (client + DNS)
+
+## v2026.03.31.2
+
+- **Add 2 DNS cache management tools** (#87)
+  - `opnsense_dns_flush_zone` — flush cached DNS entries for a specific domain
+  - `opnsense_dns_cache_search` — search Unbound DNS cache by domain
+  - Update `opnsense_dns_flush_cache` description
+  - Total: 76 tools, 73 tests
