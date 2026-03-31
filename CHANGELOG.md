@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.03.31.1
+
+- **Add 6 static route management tools** (#84)
+  - `opnsense_route_list` — list all configured static routes
+  - `opnsense_route_add` — add a static route (network + gateway)
+  - `opnsense_route_update` — update an existing static route
+  - `opnsense_route_delete` — delete a static route
+  - `opnsense_route_apply` — apply route configuration changes
+  - `opnsense_route_gateway_list` — list available gateways
+  - Zod validation schemas: AddRouteSchema, UpdateRouteSchema, DeleteRouteSchema
+  - Total: 74 tools
+
 ## v2026.03.19.1
 
 - **Add 7 Kea DHCPv4 subnet management tools** (#82)
