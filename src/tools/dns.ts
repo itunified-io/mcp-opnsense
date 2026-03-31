@@ -42,6 +42,14 @@ const DnsLookupSchema = z.object({
   hostname: z.string().min(1, "Hostname is required"),
 });
 
+const DnsFlushZoneSchema = z.object({
+  domain: DomainSchema,
+});
+
+const DnsCacheSearchSchema = z.object({
+  domain: z.string().min(1, "Domain filter is required"),
+});
+
 // ---------------------------------------------------------------------------
 // Tool definitions (for ListTools)
 // ---------------------------------------------------------------------------
@@ -154,7 +162,7 @@ export const dnsToolDefinitions = [
   },
   {
     name: "opnsense_dns_flush_cache",
-    description: "Flush the Unbound DNS cache and DNSBL data",
+    description: "Flush the Unbound DNS resolver cache",
     inputSchema: { type: "object" as const, properties: {} },
   },
   {
@@ -165,6 +173,42 @@ export const dnsToolDefinitions = [
   {
     name: "opnsense_dns_apply",
     description: "Apply pending DNS/Unbound configuration changes (reconfigure service)",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_dns_flush_zone",
+    description:
+      "Flush all cached DNS entries for a specific domain/zone. Use this to clear stale SERVFAIL or outdated records for a domain. Restarts Unbound to ensure complete cache clearing.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        domain: { type: "string", description: "Domain/zone to flush (e.g. 'example.com')" },
+      },
+      required: ["domain"],
+    },
+  },
+  {
+    name: "opnsense_dns_cache_search",
+    description:
+      "Search the Unbound DNS cache for entries matching a domain. Useful for diagnosing cached SERVFAIL, stale records, or verifying cache state.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        domain: { type: "string", description: "Domain to search for in cache (e.g. 'example.com')" },
+      },
+      required: ["domain"],
+    },
+  },
+  {
+    name: "opnsense_dns_stats",
+    description:
+      "Get Unbound DNS resolver statistics: query counts, cache hits/misses, uptime, and memory usage",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_dns_infra",
+    description:
+      "Dump the Unbound infrastructure cache showing upstream server RTT, EDNS support, and lame delegation status. Useful for diagnosing upstream DNS connectivity issues.",
     inputSchema: { type: "object" as const, properties: {} },
   },
 ];
@@ -262,7 +306,7 @@ export async function handleDnsTool(
       }
 
       case "opnsense_dns_flush_cache": {
-        const result = await client.post("/unbound/service/dnsbl");
+        const result = await client.post("/unbound/service/flushcache");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
@@ -273,6 +317,55 @@ export async function handleDnsTool(
 
       case "opnsense_dns_apply": {
         const result = await client.post("/unbound/service/reconfigure");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_dns_flush_zone": {
+        const { domain } = DnsFlushZoneSchema.parse(args);
+        // OPNsense doesn't expose per-zone flush via API.
+        // Flush full cache then restart Unbound to clear infra cache too.
+        await client.post("/unbound/service/flushcache");
+        const result = await client.post("/unbound/service/reconfigure");
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Flushed DNS cache and restarted Unbound to clear all cached entries for ${domain}. Full cache and infrastructure cache cleared.`,
+            },
+          ],
+        };
+      }
+
+      case "opnsense_dns_cache_search": {
+        const { domain } = DnsCacheSearchSchema.parse(args);
+        const cache = await client.get("/unbound/diagnostics/dumpcache");
+        const cacheStr = typeof cache === "string" ? cache : JSON.stringify(cache);
+        // Filter cache lines matching the domain
+        const lines = cacheStr.split("\n").filter((line: string) =>
+          line.toLowerCase().includes(domain.toLowerCase()),
+        );
+        if (lines.length === 0) {
+          return {
+            content: [{ type: "text", text: `No cache entries found matching '${domain}'` }],
+          };
+        }
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Cache entries matching '${domain}' (${lines.length} found):\n${lines.join("\n")}`,
+            },
+          ],
+        };
+      }
+
+      case "opnsense_dns_stats": {
+        const result = await client.get("/unbound/diagnostics/stats");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_dns_infra": {
+        const result = await client.get("/unbound/diagnostics/dumpinfra");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
