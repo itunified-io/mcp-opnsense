@@ -12,8 +12,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('DNS Tool Definitions', () => {
-  it('exports 12 tool definitions', () => {
-    expect(dnsToolDefinitions).toHaveLength(12);
+  it('exports 16 tool definitions', () => {
+    expect(dnsToolDefinitions).toHaveLength(16);
   });
 
   it('all tools have opnsense_dns_ prefix', () => {
@@ -89,6 +89,63 @@ describe('handleDnsTool', () => {
     const client = mockClient();
     const result = await handleDnsTool('opnsense_dns_nonexistent', {}, client);
     expect(result.content[0].text).toContain('Unknown');
+  });
+
+  it('flushes zone by flushing cache and restarting Unbound', async () => {
+    const postMock = vi.fn().mockResolvedValue({ status: 'ok' });
+    const client = mockClient({ post: postMock });
+
+    const result = await handleDnsTool('opnsense_dns_flush_zone', {
+      domain: 'example.com',
+    }, client);
+
+    expect(result.content[0].text).toContain('example.com');
+    expect(result.content[0].text).toContain('Flushed');
+    expect(postMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('searches DNS cache for domain entries', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue('example.com. IN A 93.184.216.34\nother.net. IN A 1.2.3.4\nsub.example.com. IN AAAA ::1'),
+    });
+
+    const result = await handleDnsTool('opnsense_dns_cache_search', {
+      domain: 'example.com',
+    }, client);
+
+    expect(result.content[0].text).toContain('2 found');
+    expect(result.content[0].text).toContain('example.com');
+    expect(result.content[0].text).not.toContain('other.net');
+  });
+
+  it('returns empty message when no cache entries match', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue('other.net. IN A 1.2.3.4'),
+    });
+
+    const result = await handleDnsTool('opnsense_dns_cache_search', {
+      domain: 'example.com',
+    }, client);
+
+    expect(result.content[0].text).toContain('No cache entries found');
+  });
+
+  it('gets DNS stats', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue({ total: { num: { queries: 1000 } } }),
+    });
+
+    const result = await handleDnsTool('opnsense_dns_stats', {}, client);
+    expect(result.content[0].text).toContain('1000');
+  });
+
+  it('dumps infrastructure cache', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue({ infra: 'data' }),
+    });
+
+    const result = await handleDnsTool('opnsense_dns_infra', {}, client);
+    expect(result.content[0].text).toContain('infra');
   });
 
   it('handles API errors gracefully', async () => {
