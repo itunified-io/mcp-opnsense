@@ -35,6 +35,16 @@ const ToggleRuleSchema = z.object({
   enabled: z.enum(["0", "1"]),
 });
 
+const ReorderRuleSchema = z.object({
+  uuid: UuidSchema,
+  sequence: z.number().int().min(1).max(1000000),
+});
+
+const DriftCheckSchema = z.object({
+  description_prefix_regex: z.string().optional(),
+  category: z.string().optional(),
+});
+
 const ManageAliasSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("create"),
@@ -211,6 +221,43 @@ export const firewallToolDefinitions = [
     description: "Apply pending firewall configuration changes",
     inputSchema: { type: "object" as const, properties: {} },
   },
+  {
+    name: "opnsense_fw_reorder_rules",
+    description:
+      "Change the sequence (ordering) of a firewall filter rule by UUID. Rules with lower sequence values are evaluated first. Use this to enforce whitelist-before-deny ordering. Run opnsense_fw_apply afterwards to activate.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        uuid: { type: "string", description: "UUID of the rule to reorder" },
+        sequence: {
+          type: "number",
+          description:
+            "New sequence value (positive integer). Lower values are evaluated first.",
+        },
+      },
+      required: ["uuid", "sequence"],
+    },
+  },
+  {
+    name: "opnsense_fw_drift_check",
+    description:
+      "Audit firewall filter rules for description hygiene. Returns rules whose description does not match the given regex (default: '^#\\d+:' — issue-reference prefix) and rules with empty descriptions. Read-only.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        description_prefix_regex: {
+          type: "string",
+          description:
+            "Regex that rule descriptions MUST match (default: '^#\\d+:' — requires a GitHub issue reference like '#361: ...')",
+        },
+        category: {
+          type: "string",
+          description:
+            "Optional category name to restrict the audit to rules in that category (exact match)",
+        },
+      },
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -325,6 +372,115 @@ export async function handleFirewallTool(
       case "opnsense_fw_apply": {
         const result = await client.post("/firewall/filter/apply");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_fw_reorder_rules": {
+        const parsed = ReorderRuleSchema.parse(args);
+        // OPNsense core filter rules carry a `sequence` field that controls
+        // evaluation order. Update it via setRule, merging with the existing
+        // rule body so we don't wipe other fields.
+        const existing = await client.get<{ rule?: Record<string, unknown> }>(
+          `/firewall/filter/getRule/${parsed.uuid}`,
+        );
+        if (!existing?.rule) {
+          return {
+            content: [
+              { type: "text", text: `Rule ${parsed.uuid} not found` },
+            ],
+          };
+        }
+
+        // OPNsense returns multi-select fields as {value: {selected: 0|1}} objects
+        // on getRule but expects comma-joined strings on setRule. Flatten.
+        const flattened: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(existing.rule)) {
+          if (value && typeof value === "object" && !Array.isArray(value)) {
+            const selected: string[] = [];
+            for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+              if (
+                v &&
+                typeof v === "object" &&
+                (v as { selected?: number }).selected === 1
+              ) {
+                selected.push(k);
+              }
+            }
+            flattened[key] = selected.join(",");
+          } else {
+            flattened[key] = value;
+          }
+        }
+        flattened["sequence"] = String(parsed.sequence);
+
+        const result = await client.post(
+          `/firewall/filter/setRule/${parsed.uuid}`,
+          { rule: flattened },
+        );
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_fw_drift_check": {
+        const parsed = DriftCheckSchema.parse(args);
+        const prefixRegexSource = parsed.description_prefix_regex ?? "^#\\d+:";
+        let prefixRegex: RegExp;
+        try {
+          prefixRegex = new RegExp(prefixRegexSource);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "invalid regex";
+          return {
+            content: [
+              { type: "text", text: `Invalid description_prefix_regex: ${msg}` },
+            ],
+          };
+        }
+
+        const searchResult = await client.get<{
+          rows?: Array<Record<string, unknown>>;
+        }>("/firewall/filter/searchRule");
+        const rows = searchResult?.rows ?? [];
+
+        const missingPrefix: Array<Record<string, unknown>> = [];
+        const emptyDescription: Array<Record<string, unknown>> = [];
+        let inspected = 0;
+
+        for (const row of rows) {
+          const category = String(row["category"] ?? "");
+          if (parsed.category && category !== parsed.category) continue;
+          inspected++;
+          const description = String(row["description"] ?? "");
+          if (description.trim() === "") {
+            emptyDescription.push({
+              uuid: row["uuid"],
+              interface: row["interface"],
+              category,
+              action: row["action"],
+            });
+            continue;
+          }
+          if (!prefixRegex.test(description)) {
+            missingPrefix.push({
+              uuid: row["uuid"],
+              interface: row["interface"],
+              category,
+              action: row["action"],
+              description,
+            });
+          }
+        }
+
+        const report = {
+          regex: prefixRegexSource,
+          category_filter: parsed.category ?? null,
+          total_rules: rows.length,
+          inspected,
+          violations: {
+            empty_description: emptyDescription.length,
+            missing_prefix: missingPrefix.length,
+          },
+          empty_description_rules: emptyDescription,
+          missing_prefix_rules: missingPrefix,
+        };
+        return { content: [{ type: "text", text: JSON.stringify(report, null, 2) }] };
       }
 
       default:

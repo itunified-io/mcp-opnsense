@@ -78,7 +78,7 @@ Add to `.mcp.json` in your project root:
 | `OPNSENSE_VERIFY_SSL` | No | `true` | Set to `false` for self-signed certificates |
 | `OPNSENSE_TIMEOUT` | No | `30000` | Request timeout in milliseconds |
 
-## Available Tools (62)
+## Available Tools (85)
 
 ### DNS/Unbound (12 tools)
 
@@ -97,7 +97,7 @@ Add to `.mcp.json` in your project root:
 | `opnsense_dns_diagnostics` | Dump DNS cache for diagnostics |
 | `opnsense_dns_apply` | Apply DNS changes (reconfigure Unbound) |
 
-### Firewall (8 tools)
+### Firewall (10 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -106,6 +106,8 @@ Add to `.mcp.json` in your project root:
 | `opnsense_fw_update_rule` | Update a firewall rule by UUID |
 | `opnsense_fw_delete_rule` | Delete a firewall rule by UUID |
 | `opnsense_fw_toggle_rule` | Enable/disable a firewall rule |
+| `opnsense_fw_reorder_rules` | Change the evaluation order (sequence) of a rule — enforces whitelist-before-deny |
+| `opnsense_fw_drift_check` | Audit rule descriptions against a regex (default: `^#\d+:` issue-reference prefix) |
 | `opnsense_fw_list_aliases` | List firewall aliases (host, network, port, URL) |
 | `opnsense_fw_manage_alias` | Create/update/delete aliases |
 | `opnsense_fw_apply` | Apply pending firewall changes |
@@ -171,6 +173,15 @@ Add to `.mcp.json` in your project root:
 | `opnsense_acme_renew_cert` | Trigger immediate certificate renewal |
 | `opnsense_acme_settings` | Get or update ACME service settings |
 | `opnsense_acme_apply` | Apply pending ACME configuration changes |
+
+### VLANs (4 tools)
+
+| Tool | Description |
+|------|-------------|
+| `opnsense_vlan_list` | List configured 802.1Q VLAN interfaces (parent, tag, priority, description) |
+| `opnsense_vlan_create` | Create a VLAN interface on a parent device |
+| `opnsense_vlan_update` | Update VLAN tag, parent, priority, or description |
+| `opnsense_vlan_delete` | Delete a VLAN interface by UUID |
 
 ### Firmware/Plugins (5 tools)
 
