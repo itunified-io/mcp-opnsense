@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.09.1
+
+- **Add VLAN lifecycle tools and firewall hygiene tools** (#89)
+  - `opnsense_fw_reorder_rules` — change rule evaluation order (enforces whitelist-before-deny)
+  - `opnsense_fw_drift_check` — audit rule descriptions against a regex (default `^#\d+:` for issue-reference prefix); optional category filter
+  - `opnsense_vlan_list` — list 802.1Q VLAN interfaces
+  - `opnsense_vlan_create` — create VLAN on a parent interface (auto-reconfigure)
+  - `opnsense_vlan_update` — update VID/parent/priority/description (auto-reconfigure)
+  - `opnsense_vlan_delete` — delete VLAN interface (auto-reconfigure)
+  - New `src/tools/vlan.ts` module with Zod schemas and 802.1Q tag validation (1-4094)
+  - Total: 85 tools
+  - Note: `opnsense_if_assign` / `opnsense_if_configure` intentionally deferred — OPNsense core has no public REST endpoint for assigning an interface to a logical slot or writing IPv4 settings; the Web UI remains the one-time path for this step
+
 ## v2026.03.31.1
 
 - **Add 6 static route management tools** (#84)
