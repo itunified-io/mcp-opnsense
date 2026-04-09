@@ -82,6 +82,14 @@ Add to `.mcp.json` in your project root:
 | `NAS_VAULT_ROLE_ID` | No | — | Vault AppRole role_id |
 | `NAS_VAULT_SECRET_ID` | No | — | Vault AppRole secret_id |
 | `NAS_VAULT_KV_MOUNT` | No | `kv` | Vault KV v2 mount path |
+| `OPNSENSE_SSH_ENABLED` | No | `false` | Enable SSH-backed tools (`opnsense_if_assign`, `opnsense_if_configure`) — see below |
+| `OPNSENSE_SSH_HOST` | If SSH enabled | — | SSH hostname of the OPNsense target |
+| `OPNSENSE_SSH_USER` | If SSH enabled | — | SSH login user (must have `NOPASSWD` sudo for the helper scripts) |
+| `OPNSENSE_SSH_KEY_PATH` | If SSH enabled | — | Path to the private key (e.g. `~/.ssh/id_ed25519`) |
+| `OPNSENSE_SSH_KNOWN_HOSTS` | If SSH enabled | — | Path to a pre-populated `known_hosts` (strict checking, no TOFU) |
+| `OPNSENSE_SSH_PORT` | No | `22` | SSH port |
+| `OPNSENSE_SSH_HELPER_DIR` | No | `/usr/local/opnsense/scripts/mcp` | Remote directory holding `if_assign.php` / `if_configure.php` |
+| `OPNSENSE_SSH_CONNECT_TIMEOUT` | No | `10` | SSH connect timeout in seconds |
 
 ### Loading Secrets from a File
 
@@ -155,7 +163,7 @@ if nothing remains.
 populated-count appear in stderr diagnostics. The loader uses the global
 `fetch` (Node 20+) — no new runtime dependencies.
 
-## Available Tools (85)
+## Available Tools (87)
 
 ### DNS/Unbound (12 tools)
 
@@ -202,13 +210,66 @@ populated-count appear in stderr diagnostics. The loader uses the global
 | `opnsense_diag_fw_logs` | Retrieve recent firewall log entries |
 | `opnsense_diag_system_info` | Get system status (CPU, memory, uptime, disk) |
 
-### Interfaces (3 tools, read-only)
+### Interfaces (5 tools)
 
 | Tool | Description |
 |------|-------------|
 | `opnsense_if_list` | List all network interfaces with device mappings |
 | `opnsense_if_get` | Get detailed interface configuration |
 | `opnsense_if_stats` | Get traffic statistics for all interfaces |
+| `opnsense_if_assign` | **SSH-backed.** Assign a VLAN/NIC device to a free `optN` slot (gap in the OPNsense REST API) |
+| `opnsense_if_configure` | **SSH-backed.** Set IPv4/IPv6 on an already-assigned `optN` slot (static, dhcp, dhcp6, track6, none) |
+
+#### SSH-backed interface assignment
+
+`opnsense_if_assign` and `opnsense_if_configure` are the only tools that do
+not go through the OPNsense REST API. The REST API has no "Interfaces →
+Assignments" endpoint, so mcp-opnsense invokes two small PHP helpers over
+SSH + sudo instead. Both tools fail fast with a clear error if
+`OPNSENSE_SSH_ENABLED` is not `true`, so non-SSH deployments are unaffected.
+
+**Setup on the OPNsense host:**
+
+1. Install the helpers (shipped in this repo under `opnsense-helpers/`):
+   ```sh
+   sudo install -m 0755 -o root -g wheel if_assign.php    /usr/local/opnsense/scripts/mcp/
+   sudo install -m 0755 -o root -g wheel if_configure.php /usr/local/opnsense/scripts/mcp/
+   ```
+2. Create a dedicated SSH user with a public key and add a `sudoers.d` drop-in
+   that whitelists the exact helper invocations (see
+   `opnsense-helpers/README.md` for the recommended pattern — the glob MUST
+   end in `*` to accommodate the mandatory PHP `--` separator).
+
+**Setup on the mcp-opnsense host:**
+
+```sh
+export OPNSENSE_SSH_ENABLED=true
+export OPNSENSE_SSH_HOST=your-opnsense.example.com
+export OPNSENSE_SSH_USER=claude
+export OPNSENSE_SSH_KEY_PATH=~/.ssh/id_ed25519
+export OPNSENSE_SSH_KNOWN_HOSTS=~/.ssh/known_hosts
+```
+
+The `known_hosts` file must be pre-populated — mcp-opnsense enforces strict
+host key checking and will refuse to connect otherwise (no TOFU fallback).
+
+**Security posture:**
+
+- No shell is invoked locally; the client spawns `ssh` directly with an argv
+  array.
+- Arguments are single-quote-escaped before concatenation into the remote
+  command string, so untrusted tool input cannot break out of argv on the
+  remote side.
+- `BatchMode=yes` + `PreferredAuthentications=publickey` disables password
+  and keyboard-interactive auth.
+- The PHP helpers validate every argument (slot regex, device regex,
+  description charset, IP + CIDR) before touching `config.xml`, stamp every
+  `write_config()` with `mcp-opnsense: ...` for audit traceability, and use
+  numbered exit codes so the caller can distinguish "invalid args" from
+  "write_config failed" from "apply failed".
+
+See ADR-0092 (in the private infrastructure repo) for the full research
+spike, empirical findings, and rollback contract.
 
 ### DHCP (5 tools)
 

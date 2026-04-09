@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.09.5
+
+- **Add `opnsense_if_assign` and `opnsense_if_configure` SSH-backed tools** (#97)
+  - New `src/client/ssh-client.ts` — minimal SSH client backed by the system `ssh` binary via `spawn()` (no new runtime dependencies)
+  - Strict host key checking enforced via a required `OPNSENSE_SSH_KNOWN_HOSTS` file; no TOFU fallback
+  - `BatchMode=yes` + `PreferredAuthentications=publickey` disables password and keyboard-interactive auth
+  - Arguments are single-quote-escaped before concatenation into the remote command string — no argv breakout from untrusted tool input
+  - New env vars: `OPNSENSE_SSH_ENABLED`, `OPNSENSE_SSH_HOST`, `OPNSENSE_SSH_USER`, `OPNSENSE_SSH_KEY_PATH`, `OPNSENSE_SSH_KNOWN_HOSTS`, `OPNSENSE_SSH_PORT` (default 22), `OPNSENSE_SSH_HELPER_DIR` (default `/usr/local/opnsense/scripts/mcp`), `OPNSENSE_SSH_CONNECT_TIMEOUT` (default 10s)
+  - `opnsense_if_assign` — assign a VLAN/NIC device to a free `optN` slot (closes the gap where the OPNsense REST API has no "Interfaces → Assignments" endpoint)
+  - `opnsense_if_configure` — set IPv4/IPv6 on an already-assigned `optN` slot (static, dhcp, dhcp6, track6, none)
+  - Both tools fail fast with a clear error if `OPNSENSE_SSH_ENABLED` is not `true`, so non-SSH deployments are unaffected
+  - PHP `--` separator is inserted automatically (mandatory per ADR-0092 spike: PHP CLI would otherwise swallow `--slot=…` as its own option)
+  - Exit codes from the helpers are surfaced to the caller and mapped into the response payload
+  - 19 new unit tests (`tests/client/ssh-client.test.ts`) covering constructor validation, `fromEnv()` env-var requirements, SSH argv assembly, helper command building with the mandatory `--` separator, and shell quoting of metacharacter-laden values
+  - README: new "SSH-backed interface assignment" section with env var table, OPNsense host setup, mcp-opnsense host setup, and the full security posture
+  - Tool count: 85 → 87
+
 ## v2026.04.09.4
 
 - **Add `opnsense-helpers/` PHP scripts for SSH-backed interface assignment** (#95)
