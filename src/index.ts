@@ -64,7 +64,7 @@ for (const def of routingToolDefinitions) toolHandlers.set(def.name, handleRouti
 for (const def of vlanToolDefinitions) toolHandlers.set(def.name, handleVlanTool);
 
 const server = new Server(
-  { name: 'mcp-opnsense', version: '2026.4.9-3' },
+  { name: 'mcp-opnsense', version: '2026.4.9-5' },
   { capabilities: { tools: {} } }
 );
 
