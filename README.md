@@ -77,6 +77,45 @@ Add to `.mcp.json` in your project root:
 | `OPNSENSE_API_SECRET` | Yes | — | API secret for authentication |
 | `OPNSENSE_VERIFY_SSL` | No | `true` | Set to `false` for self-signed certificates |
 | `OPNSENSE_TIMEOUT` | No | `30000` | Request timeout in milliseconds |
+| `MCP_SECRETS_FILE` | No | — | Path to a key/value file to load on startup (see below) |
+
+### Loading Secrets from a File
+
+When the MCP server is launched from a context that does not inherit your shell
+environment (e.g. a GUI desktop app launched via `launchd`), `process.env` may
+be empty and tool calls will fail with `Invalid URL` errors. To avoid
+system-wide environment hacks, point `MCP_SECRETS_FILE` at a file that holds
+the required variables:
+
+```sh
+export MCP_SECRETS_FILE=~/.mcp-opnsense.env
+```
+
+The file is a simple `KEY=value` format (optionally prefixed with `export`,
+with single or double quotes around values, `#` comments allowed). Example:
+
+```dotenv
+OPNSENSE_URL=https://your-opnsense.example.com
+OPNSENSE_API_KEY=your-api-key
+OPNSENSE_API_SECRET=your-api-secret
+```
+
+The OPNsense web UI "Download as .txt" button generates a two-line file with
+lowercase `key=` / `secret=` pairs. That format is also recognized directly —
+no rewriting needed:
+
+```
+key=your-api-key
+secret=your-api-secret
+```
+
+**Precedence:** values in `process.env` always win over values from the file,
+so the existing shell-based workflow stays fully backward compatible. Missing
+or unreadable files are silently skipped (the server will fail with the usual
+"required variable" error if nothing is set).
+
+**Security:** the file holds plaintext credentials. Store it outside any git
+repository and restrict permissions: `chmod 600 ~/.mcp-opnsense.env`.
 
 ## Available Tools (85)
 

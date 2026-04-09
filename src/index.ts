@@ -4,7 +4,12 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { loadSecretsFile } from './config/secrets-file.js';
 import { OPNsenseClient } from './client/opnsense-client.js';
+
+// Load MCP_SECRETS_FILE (if set) into process.env BEFORE reading any env vars.
+// Existing process.env values take precedence. See docs/plans/003-secrets-file.md.
+loadSecretsFile();
 import { dnsToolDefinitions, handleDnsTool } from './tools/dns.js';
 import { firewallToolDefinitions, handleFirewallTool } from './tools/firewall.js';
 import { diagnosticsToolDefinitions, handleDiagnosticsTool } from './tools/diagnostics.js';
@@ -46,7 +51,7 @@ for (const def of routingToolDefinitions) toolHandlers.set(def.name, handleRouti
 for (const def of vlanToolDefinitions) toolHandlers.set(def.name, handleVlanTool);
 
 const server = new Server(
-  { name: 'mcp-opnsense', version: '2026.4.9' },
+  { name: 'mcp-opnsense', version: '2026.4.9-2' },
   { capabilities: { tools: {} } }
 );
 
