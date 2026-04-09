@@ -5,11 +5,24 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { loadSecretsFile } from './config/secrets-file.js';
+import { loadFromVault } from './config/vault-loader.js';
 import { OPNsenseClient } from './client/opnsense-client.js';
 
-// Load MCP_SECRETS_FILE (if set) into process.env BEFORE reading any env vars.
-// Existing process.env values take precedence. See docs/plans/003-secrets-file.md.
+// Secret loading order (precedence: first wins):
+//   1. process.env (explicit shell / MCP config) — always highest
+//   2. Vault AppRole (opportunistic, if NAS_VAULT_* is configured)
+//   3. MCP_SECRETS_FILE
+// loadSecretsFile / loadFromVault are both additive and only populate env
+// vars that are currently undefined/empty.
 loadSecretsFile();
+await loadFromVault({
+  kvPath: 'opnsense/bifrost',
+  mapping: {
+    url: 'OPNSENSE_URL',
+    api_key: 'OPNSENSE_API_KEY',
+    api_secret: 'OPNSENSE_API_SECRET',
+  },
+});
 import { dnsToolDefinitions, handleDnsTool } from './tools/dns.js';
 import { firewallToolDefinitions, handleFirewallTool } from './tools/firewall.js';
 import { diagnosticsToolDefinitions, handleDiagnosticsTool } from './tools/diagnostics.js';
@@ -51,7 +64,7 @@ for (const def of routingToolDefinitions) toolHandlers.set(def.name, handleRouti
 for (const def of vlanToolDefinitions) toolHandlers.set(def.name, handleVlanTool);
 
 const server = new Server(
-  { name: 'mcp-opnsense', version: '2026.4.9-2' },
+  { name: 'mcp-opnsense', version: '2026.4.9-3' },
   { capabilities: { tools: {} } }
 );
 

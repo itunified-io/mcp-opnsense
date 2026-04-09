@@ -78,6 +78,10 @@ Add to `.mcp.json` in your project root:
 | `OPNSENSE_VERIFY_SSL` | No | `true` | Set to `false` for self-signed certificates |
 | `OPNSENSE_TIMEOUT` | No | `30000` | Request timeout in milliseconds |
 | `MCP_SECRETS_FILE` | No | — | Path to a key/value file to load on startup (see below) |
+| `NAS_VAULT_ADDR` | No | — | HashiCorp Vault URL, enables Vault AppRole loading (see below) |
+| `NAS_VAULT_ROLE_ID` | No | — | Vault AppRole role_id |
+| `NAS_VAULT_SECRET_ID` | No | — | Vault AppRole secret_id |
+| `NAS_VAULT_KV_MOUNT` | No | `kv` | Vault KV v2 mount path |
 
 ### Loading Secrets from a File
 
@@ -116,6 +120,40 @@ or unreadable files are silently skipped (the server will fail with the usual
 
 **Security:** the file holds plaintext credentials. Store it outside any git
 repository and restrict permissions: `chmod 600 ~/.mcp-opnsense.env`.
+
+### Loading Secrets from HashiCorp Vault (AppRole)
+
+If you run a central Vault instance, `mcp-opnsense` can fetch its credentials
+at startup via AppRole instead of storing them in a file. Set:
+
+```sh
+export NAS_VAULT_ADDR=https://vault.example.com
+export NAS_VAULT_ROLE_ID=<role-id>
+export NAS_VAULT_SECRET_ID=<secret-id>
+# optional — defaults to "kv"
+export NAS_VAULT_KV_MOUNT=kv
+```
+
+The loader reads KV v2 at `<mount>/data/opnsense/bifrost` and expects three
+keys: `url`, `api_key`, `api_secret`. Example Vault write:
+
+```sh
+vault kv put kv/opnsense/bifrost \
+  url=https://your-opnsense.example.com \
+  api_key=your-api-key \
+  api_secret=your-api-secret
+```
+
+**Precedence:** `process.env` > Vault > `MCP_SECRETS_FILE`. If `NAS_VAULT_ADDR`
+is unset, Vault loading is a silent no-op — the server behaves exactly as
+before. On any Vault error (network, auth, missing path), a single-line
+warning is written to stderr and the server falls back to whatever env vars
+are already set; it will then fail with the usual "required variable" error
+if nothing remains.
+
+**Security:** secret values are never logged. Only the KV path name and a
+populated-count appear in stderr diagnostics. The loader uses the global
+`fetch` (Node 20+) — no new runtime dependencies.
 
 ## Available Tools (85)
 

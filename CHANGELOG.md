@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.09.3
+
+- **Vault AppRole secret loading** (#93)
+  - New opportunistic loader reads `OPNSENSE_URL` / `OPNSENSE_API_KEY` / `OPNSENSE_API_SECRET` from HashiCorp Vault at startup
+  - Configured via `NAS_VAULT_ADDR` + `NAS_VAULT_ROLE_ID` + `NAS_VAULT_SECRET_ID` (optional `NAS_VAULT_KV_MOUNT`, default `kv`)
+  - KV v2 path: `<mount>/data/opnsense/bifrost` — keys `url`, `api_key`, `api_secret`
+  - Precedence: `process.env` > Vault > `MCP_SECRETS_FILE` — fully backwards compatible (silent no-op if `NAS_VAULT_ADDR` is unset)
+  - Vault errors are logged to stderr as a single line and never fatal — the server falls back to existing env vars
+  - Secret values are never logged; only the KV path name and a populated-count appear in diagnostics
+  - No new runtime dependencies — uses global `fetch` (Node 20+)
+
 ## v2026.04.09.2
 
 - **Load configuration from a secrets file** (#91)
