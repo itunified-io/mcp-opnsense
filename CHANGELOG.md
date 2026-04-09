@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.09.2
+
+- **Load configuration from a secrets file** (#91)
+  - New `MCP_SECRETS_FILE` env var points to a key/value file loaded at startup
+  - Supports standard dotenv format (`KEY=value`, optional `export` prefix, quoted values, `#` comments)
+  - Also recognizes the OPNsense "Download as .txt" format (lowercase `key=` / `secret=`) and maps it to `OPNSENSE_API_KEY` / `OPNSENSE_API_SECRET`
+  - `process.env` values take precedence — fully backward compatible with the shell-sourced workflow
+  - Missing or unreadable files are silently skipped
+  - Tilde (`~/`) in the file path is expanded to `$HOME`
+  - Enables launching the MCP server from GUI desktop apps (launchd does not read `.zshrc`) without system-wide environment hacks
+  - New `src/config/secrets-file.ts` module with 19 unit tests
+  - README.md: new "Loading Secrets from a File" section with security notes (`chmod 600`, store outside git)
+
 ## v2026.04.09.1
 
 - **Add VLAN lifecycle tools and firewall hygiene tools** (#89)
