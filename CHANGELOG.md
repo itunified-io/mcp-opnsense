@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.09.4
+
+- **Add `opnsense-helpers/` PHP scripts for SSH-backed interface assignment** (#95)
+  - New `opnsense-helpers/if_assign.php` — assign an existing VLAN / NIC device to a free `optN` slot
+  - New `opnsense-helpers/if_configure.php` — set IPv4 / IPv6 on an already-assigned `optN` slot (static, dhcp, dhcp6, track6, none)
+  - New `opnsense-helpers/README.md` — install procedure + recommended `sudoers.d` whitelist template
+  - Fills the gap where the OPNsense REST API has no "Interfaces → Assignments" endpoint
+  - Both helpers mirror `interfaces_assign.php` requires (`config.inc`, `filter.inc`, `system.inc`, `interfaces.inc`, `util.inc`)
+  - `interfaces_configure()` / `filter_configure()` calls are wrapped in `ob_start()` / `ob_end_clean()` so stdout stays a single JSON object
+  - Strict argument validation: slot regex, device regex, description charset, `filter_var()` IP checks, CIDR range
+  - Numbered exit codes: `0` success, `1` invalid args, `2` state error, `3` validation, `4` write_config failed, `5` interfaces_configure failed
+  - Every `write_config()` call is stamped `mcp-opnsense: ...` so mutations are traceable in the OPNsense backup history
+  - Validated end-to-end on OPNsense 24.7 (assign + configure with `ipaddr=none`, read-back, revert)
+  - Server-side only — SSH client tools (`opnsense_if_assign`, `opnsense_if_configure`) ship in a follow-up release
+
 ## v2026.04.09.3
 
 - **Vault AppRole secret loading** (#93)
