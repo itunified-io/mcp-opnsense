@@ -311,7 +311,7 @@ async function keaAddSubnet(
   if (parsed.domain_search) subnet.option_domain_search = parsed.domain_search;
   if (parsed.ntp_servers) subnet.option_ntp_servers = parsed.ntp_servers;
 
-  const result = await client.post("/kea/dhcpv4/add_subnet", { subnet });
+  const result = await client.post("/kea/dhcpv4/add_subnet", { subnet4: subnet });
   return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
 }
 
@@ -331,7 +331,7 @@ async function keaUpdateSubnet(
   if (parsed.domain_search !== undefined) subnet.option_domain_search = parsed.domain_search;
   if (parsed.ntp_servers !== undefined) subnet.option_ntp_servers = parsed.ntp_servers;
 
-  const result = await client.post(`/kea/dhcpv4/set_subnet/${parsed.uuid}`, { subnet });
+  const result = await client.post(`/kea/dhcpv4/set_subnet/${parsed.uuid}`, { subnet4: subnet });
   return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
 }
 
