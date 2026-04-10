@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.10.4
+
+- **Add MCP Registry listing** — `server.json` + `mcpName` for `registry.modelcontextprotocol.io`
+- Namespace: `io.github.itunified-io/opnsense`
+
 ## v2026.04.10.3
 
 - **Fix npm scope from `@itunified` to `@itunified.io`** (#105)

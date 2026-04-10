@@ -12,7 +12,7 @@
     {
       "registryType": "npm",
       "identifier": "@itunified.io/mcp-opnsense",
-      "version": "2026.4.10-3",
+      "version": "2026.4.10-4",
       "runtimeHint": "npx",
       "runtimeArguments": [],
       "packageArguments": [],

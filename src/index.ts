@@ -67,7 +67,7 @@ for (const def of vlanToolDefinitions) toolHandlers.set(def.name, handleVlanTool
 for (const def of tailscaleToolDefinitions) toolHandlers.set(def.name, handleTailscaleTool);
 
 const server = new Server(
-  { name: 'mcp-opnsense', version: '2026.4.10-3' },
+  { name: 'mcp-opnsense', version: '2026.4.10-4' },
   { capabilities: { tools: {} } }
 );
 
