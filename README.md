@@ -16,6 +16,7 @@ Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense R
 
 - [Features](#features)
 - [Quick Start](#quick-start)
+- [HashiCorp Vault Integration (Optional)](#hashicorp-vault-integration-optional)
 - [Claude Code Integration](#claude-code-integration)
 - [Environment Variables](#environment-variables)
 - [Available Tools (62)](#available-tools-62)
@@ -46,6 +47,145 @@ cp .env.example .env   # Edit with your OPNsense API credentials
 npm run build
 node dist/index.js     # stdio transport for MCP
 ```
+
+## HashiCorp Vault Integration (Optional)
+
+`mcp-opnsense` supports **opportunistic AppRole authentication** against a HashiCorp Vault
+instance. When Vault env vars are present, the server fetches OPNsense credentials from
+KV v2 at startup. If they are absent, the server falls back silently to direct env vars or
+`MCP_SECRETS_FILE` — no configuration change or restart required.
+
+### How It Works
+
+1. At startup, the server checks for `NAS_VAULT_ADDR` in `process.env`.
+2. If set, it authenticates via AppRole (`NAS_VAULT_ROLE_ID` + `NAS_VAULT_SECRET_ID`),
+   reads the secret at `<NAS_VAULT_KV_MOUNT>/data/<path>`, and maps the KV fields to
+   OPNsense env vars.
+3. If `NAS_VAULT_ADDR` is **not** set (or any Vault call fails), a single warning line is
+   written to stderr and the server continues with whatever env vars are already available.
+4. The Vault client uses the global `fetch` built into Node 20+ — no additional runtime
+   dependencies are added.
+
+### Secret Precedence
+
+```
+Explicit env vars  >  Vault  >  MCP_SECRETS_FILE  >  error (required var missing)
+```
+
+- Values already present in `process.env` are **never overwritten** by Vault.
+- Vault is skipped entirely if `NAS_VAULT_ADDR` is unset.
+- `MCP_SECRETS_FILE` is the last fallback (see [Loading Secrets from a File](#loading-secrets-from-a-file) below).
+
+### Vault Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NAS_VAULT_ADDR` | Yes\* | Vault server address (e.g. `https://vault.example.com:8200`) |
+| `NAS_VAULT_ROLE_ID` | Yes\* | AppRole role ID for this server |
+| `NAS_VAULT_SECRET_ID` | Yes\* | AppRole secret ID for this server |
+| `NAS_VAULT_KV_MOUNT` | No | KV v2 mount path (default: `kv`) |
+
+\* Only required when using Vault. Without these, the server uses direct env vars or `MCP_SECRETS_FILE`.
+
+> **Note:** `OPNSENSE_VERIFY_SSL`, `OPNSENSE_TIMEOUT`, and all SSH-related env vars
+> (`OPNSENSE_SSH_*`) are **not** loaded from Vault. Set them directly in the MCP config
+> or your shell environment.
+
+### KV v2 Secret Structure
+
+The server reads from the path configured at startup (default: `kv/data/opnsense/bifrost`,
+customisable via the KV mount). The secret must contain the following keys:
+
+```
+# Path: kv/your/opnsense/secret
+{
+  "url":        "https://your-opnsense.example.com",
+  "api_key":    "your-api-key",
+  "api_secret": "your-api-secret"
+}
+```
+
+Key mapping:
+
+| KV field | Env var |
+|----------|---------|
+| `url` | `OPNSENSE_URL` |
+| `api_key` | `OPNSENSE_API_KEY` |
+| `api_secret` | `OPNSENSE_API_SECRET` |
+
+### Vault Setup
+
+**1. Write credentials to KV v2:**
+
+```sh
+vault kv put kv/opnsense/your-firewall \
+  url=https://your-opnsense.example.com \
+  api_key=your-api-key \
+  api_secret=your-api-secret
+```
+
+**2. Create a read-only policy:**
+
+```hcl
+# opnsense-read.hcl
+path "kv/data/opnsense/*" {
+  capabilities = ["read"]
+}
+
+path "kv/metadata/opnsense/*" {
+  capabilities = ["list", "read"]
+}
+```
+
+```sh
+vault policy write opnsense-read opnsense-read.hcl
+```
+
+**3. Enable AppRole auth and create a role:**
+
+```sh
+vault auth enable approle
+
+vault write auth/approle/role/mcp-opnsense \
+  token_policies="opnsense-read" \
+  token_ttl=1h \
+  token_max_ttl=4h \
+  secret_id_ttl=0
+```
+
+**4. Retrieve the role credentials:**
+
+```sh
+vault read auth/approle/role/mcp-opnsense/role-id
+vault write -f auth/approle/role/mcp-opnsense/secret-id
+```
+
+Store the returned `role_id` and `secret_id` in your MCP config (see example below).
+
+### Claude Desktop / MCP Config Example (Vault)
+
+When using Vault, OPNsense credentials are **not** present in the config file. Only
+Vault authentication details and non-secret options are needed:
+
+```json
+{
+  "mcpServers": {
+    "opnsense": {
+      "command": "npx",
+      "args": ["@itunified.io/mcp-opnsense"],
+      "env": {
+        "NAS_VAULT_ADDR": "https://vault.example.com:8200",
+        "NAS_VAULT_ROLE_ID": "your-role-id",
+        "NAS_VAULT_SECRET_ID": "your-secret-id",
+        "OPNSENSE_VERIFY_SSL": "true"
+      }
+    }
+  }
+}
+```
+
+This keeps all OPNsense secrets out of config files and version control. The server
+authenticates to Vault on each startup and retrieves fresh credentials.
 
 ## Claude Code Integration
 
