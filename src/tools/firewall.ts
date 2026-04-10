@@ -261,6 +261,43 @@ export const firewallToolDefinitions = [
 ];
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the selected key from an OPNsense multi-select field.
+ *
+ * getRule returns multi-select fields as:
+ *   { "pass": { "value": "Pass", "selected": 1 }, "block": { "value": "Block", "selected": 0 } }
+ *
+ * setRule expects the flat key string, e.g. "pass".
+ *
+ * Handles both numeric (selected: 1) and string (selected: "1") variants.
+ * Returns undefined if the field is not a recognized multi-select object.
+ */
+export function extractSelected(field: unknown): string | undefined {
+  if (typeof field === "string") return field;
+  if (field && typeof field === "object" && !Array.isArray(field)) {
+    const entries = Object.entries(field as Record<string, unknown>);
+    const selected: string[] = [];
+    for (const [k, v] of entries) {
+      if (
+        v &&
+        typeof v === "object" &&
+        ((v as Record<string, unknown>).selected === 1 ||
+          (v as Record<string, unknown>).selected === "1")
+      ) {
+        selected.push(k);
+      }
+    }
+    if (selected.length > 0) return selected.join(",");
+    // Not a multi-select object (no {selected} children) — return undefined
+    return undefined;
+  }
+  return undefined;
+}
+
+// ---------------------------------------------------------------------------
 // Tool handler
 // ---------------------------------------------------------------------------
 
@@ -377,8 +414,14 @@ export async function handleFirewallTool(
       case "opnsense_fw_reorder_rules": {
         const parsed = ReorderRuleSchema.parse(args);
         // OPNsense core filter rules carry a `sequence` field that controls
-        // evaluation order. Update it via setRule, merging with the existing
-        // rule body so we don't wipe other fields.
+        // evaluation order. Read the existing rule, extract the core fields
+        // that setRule accepts, and POST back with the new sequence.
+        //
+        // Why not roundtrip the full getRule response? Because getRule returns
+        // multi-select fields as {key: {value, selected}} objects while setRule
+        // expects flat strings. The generic flattening approach is fragile — some
+        // fields (source_net, log, gateway, etc.) have structures the flattener
+        // doesn't handle. Instead, extract only the known core fields.
         const existing = await client.get<{ rule?: Record<string, unknown> }>(
           `/firewall/filter/getRule/${parsed.uuid}`,
         );
@@ -390,31 +433,28 @@ export async function handleFirewallTool(
           };
         }
 
-        // OPNsense returns multi-select fields as {value: {selected: 0|1}} objects
-        // on getRule but expects comma-joined strings on setRule. Flatten.
-        const flattened: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(existing.rule)) {
-          if (value && typeof value === "object" && !Array.isArray(value)) {
-            const selected: string[] = [];
-            for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-              if (
-                v &&
-                typeof v === "object" &&
-                (v as { selected?: number }).selected === 1
-              ) {
-                selected.push(k);
-              }
-            }
-            flattened[key] = selected.join(",");
-          } else {
-            flattened[key] = value;
-          }
-        }
-        flattened["sequence"] = String(parsed.sequence);
-
+        const r = existing.rule;
         const result = await client.post(
           `/firewall/filter/setRule/${parsed.uuid}`,
-          { rule: flattened },
+          {
+            rule: {
+              enabled: extractSelected(r["enabled"]) ?? "1",
+              action: extractSelected(r["action"]) ?? "pass",
+              direction: extractSelected(r["direction"]) ?? "in",
+              interface: extractSelected(r["interface"]) ?? "",
+              ipprotocol: extractSelected(r["ipprotocol"]) ?? "inet",
+              protocol: extractSelected(r["protocol"]) ?? "any",
+              source_net: typeof r["source_net"] === "string" ? r["source_net"] : "any",
+              source_not: extractSelected(r["source_not"]) ?? "0",
+              source_port: typeof r["source_port"] === "string" ? r["source_port"] : "",
+              destination_net: typeof r["destination_net"] === "string" ? r["destination_net"] : "any",
+              destination_not: extractSelected(r["destination_not"]) ?? "0",
+              destination_port: typeof r["destination_port"] === "string" ? r["destination_port"] : "",
+              log: extractSelected(r["log"]) ?? "0",
+              description: typeof r["description"] === "string" ? r["description"] : "",
+              sequence: String(parsed.sequence),
+            },
+          },
         );
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
