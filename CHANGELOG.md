@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.10.1
+
+- **Fix `opnsense_kea_subnet_create` and `opnsense_kea_subnet_update` silent failure** (#101)
+  - POST payload was using `{ subnet: {...} }` instead of `{ subnet4: {...} }` wrapper
+  - OPNsense Kea DHCPv4 API requires `subnet4` as the top-level key for subnet operations
+  - Both `keaAddSubnet` and `keaUpdateSubnet` now correctly wrap the payload
+
 ## v2026.04.09.5
 
 - **Add `opnsense_if_assign` and `opnsense_if_configure` SSH-backed tools** (#97)
