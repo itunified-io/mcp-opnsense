@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.10.3
+
+- **Fix npm scope from `@itunified` to `@itunified.io`** (#105)
+  - Corrects package name to match the npm org `@itunified.io` (with dot)
+  - First npm publish under `@itunified.io/mcp-opnsense`
+
 ## v2026.04.10.2
 
 - **Add `opnsense_tailscale_*` tool family for os-tailscale plugin API** (#103)
