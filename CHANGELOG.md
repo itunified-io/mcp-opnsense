@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.10.2
+
+- **Add `opnsense_tailscale_*` tool family for os-tailscale plugin API** (#103)
+  - `opnsense_tailscale_settings_get` — read current Tailscale plugin settings
+  - `opnsense_tailscale_settings_set` — update settings (enabled, port, auth_key, advertise_routes, accept_routes, accept_dns, exit_node)
+  - `opnsense_tailscale_service_control` — start/stop/restart/reconfigure tailscaled
+  - `opnsense_tailscale_service_status` — check if tailscaled is running
+  - All boolean params use `z.preprocess` for MCP string-coercion safety
+
 ## v2026.04.10.1
 
 - **Fix `opnsense_kea_subnet_create` and `opnsense_kea_subnet_update` silent failure** (#101)

@@ -33,6 +33,7 @@ import { acmeToolDefinitions, handleAcmeTool } from './tools/acme.js';
 import { firmwareToolDefinitions, handleFirmwareTool } from './tools/firmware.js';
 import { routingToolDefinitions, handleRoutingTool } from './tools/routing.js';
 import { vlanToolDefinitions, handleVlanTool } from './tools/vlan.js';
+import { tailscaleToolDefinitions, handleTailscaleTool } from './tools/tailscale.js';
 
 const allToolDefinitions = [
   ...dnsToolDefinitions,
@@ -45,6 +46,7 @@ const allToolDefinitions = [
   ...firmwareToolDefinitions,
   ...routingToolDefinitions,
   ...vlanToolDefinitions,
+  ...tailscaleToolDefinitions,
 ];
 
 const toolHandlers = new Map<
@@ -62,6 +64,7 @@ for (const def of acmeToolDefinitions) toolHandlers.set(def.name, handleAcmeTool
 for (const def of firmwareToolDefinitions) toolHandlers.set(def.name, handleFirmwareTool);
 for (const def of routingToolDefinitions) toolHandlers.set(def.name, handleRoutingTool);
 for (const def of vlanToolDefinitions) toolHandlers.set(def.name, handleVlanTool);
+for (const def of tailscaleToolDefinitions) toolHandlers.set(def.name, handleTailscaleTool);
 
 const server = new Server(
   { name: 'mcp-opnsense', version: '2026.4.9-5' },
