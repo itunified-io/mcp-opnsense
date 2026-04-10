@@ -22,6 +22,7 @@
   ],
   "author": "itunified.io",
   "license": "AGPL-3.0-only",
+  "mcpName": "io.github.itunified-io/opnsense",
   "repository": {
     "type": "git",
     "url": "https://github.com/itunified-io/mcp-opnsense.git"
