@@ -1,0 +1,46 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.itunified-io/opnsense",
+  "title": "OPNsense MCP Server",
+  "description": "Manage OPNsense firewall infrastructure via MCP — 72 tools across 11 domains (DNS, Firewall, Diagnostics, Interfaces, DHCP, System, ACME, Firmware, Routing, VLANs, Tailscale)",
+  "version": "2026.4.10",
+  "repository": {
+    "url": "https://github.com/itunified-io/mcp-opnsense",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@itunified.io/mcp-opnsense",
+      "version": "2026.4.10-3",
+      "runtimeHint": "npx",
+      "runtimeArguments": [],
+      "packageArguments": [],
+      "environmentVariables": [
+        {
+          "name": "OPNSENSE_URL",
+          "description": "OPNsense base URL (e.g. https://192.168.1.1)",
+          "required": true
+        },
+        {
+          "name": "OPNSENSE_API_KEY",
+          "description": "OPNsense API key for authentication",
+          "required": true
+        },
+        {
+          "name": "OPNSENSE_API_SECRET",
+          "description": "OPNsense API secret for authentication",
+          "required": true
+        },
+        {
+          "name": "OPNSENSE_VERIFY_SSL",
+          "description": "Set to false for self-signed certificates (default: true)",
+          "required": false
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
