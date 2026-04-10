@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.10.5
+
+- **fix: opnsense_fw_reorder_rules fails with 'Unexpected error' on setRule** (#108)
+  - Root cause: getRule returns multi-select fields as nested `{key: {selected: 0|1}}` objects, but the generic flattener didn't handle all field types (source_net, gateway, categories, etc.)
+  - Fix: replace generic roundtrip with clean payload extraction — only send the core fields setRule accepts (enabled, action, direction, interface, ipprotocol, protocol, source/dest net/not/port, log, description, sequence)
+  - New `extractSelected()` helper exported for multi-select field parsing
+  - 14 new unit tests (9 extractSelected + 3 reorder + 2 tool definitions)
+
 ## v2026.04.10.4
 
 - **Add MCP Registry listing** — `server.json` + `mcpName` for `registry.modelcontextprotocol.io`
