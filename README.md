@@ -461,7 +461,7 @@ spike, empirical findings, and rollback contract.
 | `opnsense_vlan_update` | Update VLAN tag, parent, priority, or description |
 | `opnsense_vlan_delete` | Delete a VLAN interface by UUID |
 
-### Firmware/Plugins (5 tools)
+### Firmware/Plugins (8 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -470,6 +470,9 @@ spike, empirical findings, and rollback contract.
 | `opnsense_firmware_list_plugins` | List all available and installed plugins |
 | `opnsense_firmware_install` | Install an OPNsense plugin package |
 | `opnsense_firmware_remove` | Remove a plugin package (requires confirmation) |
+| `opnsense_firmware_upgrade` | Trigger system upgrade (minor or major series jump). Long-running. Requires confirmation. |
+| `opnsense_firmware_upgrade_status` | Get progress/log of a running or just-completed upgrade |
+| `opnsense_firmware_reboot` | Reboot the OPNsense system. Requires confirmation. |
 
 ## Skills
 

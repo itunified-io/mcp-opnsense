@@ -16,6 +16,18 @@ const RemovePackageSchema = z.object({
   }),
 });
 
+const UpgradeSchema = z.object({
+  confirm: z.literal(true, {
+    errorMap: () => ({ message: "confirm must be true to proceed with the system upgrade" }),
+  }),
+});
+
+const RebootSchema = z.object({
+  confirm: z.literal(true, {
+    errorMap: () => ({ message: "confirm must be true to proceed with the reboot" }),
+  }),
+});
+
 // ---------------------------------------------------------------------------
 // Tool definitions (for ListTools)
 // ---------------------------------------------------------------------------
@@ -74,6 +86,44 @@ export const firmwareToolDefinitions = [
       required: ["package", "confirm"],
     },
   },
+  {
+    name: "opnsense_firmware_upgrade",
+    description:
+      "Trigger an OPNsense system upgrade based on what 'opnsense_firmware_status' reports (minor packages, or a major-series jump such as 24.7 → 25.1). Long-running: poll progress with 'opnsense_firmware_upgrade_status'. A reboot is typically required afterwards. DESTRUCTIVE: requires explicit confirmation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        confirm: {
+          type: "boolean",
+          description: "Must be true to confirm the upgrade",
+          enum: [true],
+        },
+      },
+      required: ["confirm"],
+    },
+  },
+  {
+    name: "opnsense_firmware_upgrade_status",
+    description:
+      "Get the progress/log of a currently running or last completed firmware upgrade (long-running operation status).",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_firmware_reboot",
+    description:
+      "Reboot the OPNsense system. Causes a network outage on the firewall and any services it provides (DNS, DHCP, VPN). DESTRUCTIVE: requires explicit confirmation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        confirm: {
+          type: "boolean",
+          description: "Must be true to confirm the reboot",
+          enum: [true],
+        },
+      },
+      required: ["confirm"],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -113,6 +163,23 @@ export async function handleFirmwareTool(
       case "opnsense_firmware_remove": {
         const parsed = RemovePackageSchema.parse(args);
         const result = await client.post("/core/firmware/remove/" + encodeURIComponent(parsed.package));
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_firmware_upgrade": {
+        UpgradeSchema.parse(args);
+        const result = await client.post("/core/firmware/upgrade");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_firmware_upgrade_status": {
+        const result = await client.get("/core/firmware/upgradestatus");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_firmware_reboot": {
+        RebootSchema.parse(args);
+        const result = await client.post("/core/firmware/reboot");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
