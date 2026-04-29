@@ -12,8 +12,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('Firmware Tool Definitions', () => {
-  it('exports 5 tool definitions', () => {
-    expect(firmwareToolDefinitions).toHaveLength(5);
+  it('exports 8 tool definitions', () => {
+    expect(firmwareToolDefinitions).toHaveLength(8);
   });
 
   it('all tools have opnsense_firmware_ prefix', () => {
@@ -125,6 +125,59 @@ describe('handleFirmwareTool', () => {
     const client = mockClient();
     const result = await handleFirmwareTool('opnsense_firmware_nonexistent', {}, client);
     expect(result.content[0].text).toContain('Unknown');
+  });
+
+  it('triggers a system upgrade with confirmation', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ status: 'ok', msg_uuid: 'abc-123' }),
+    });
+
+    const result = await handleFirmwareTool('opnsense_firmware_upgrade', { confirm: true }, client);
+
+    expect(result.content[0].text).toContain('ok');
+    expect(client.post).toHaveBeenCalledWith('/core/firmware/upgrade');
+  });
+
+  it('rejects upgrade without confirmation', async () => {
+    const client = mockClient();
+    const result = await handleFirmwareTool('opnsense_firmware_upgrade', { confirm: false }, client);
+    expect(result.content[0].text).toContain('Error');
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it('rejects upgrade with no args', async () => {
+    const client = mockClient();
+    const result = await handleFirmwareTool('opnsense_firmware_upgrade', {}, client);
+    expect(result.content[0].text).toContain('Error');
+    expect(client.post).not.toHaveBeenCalled();
+  });
+
+  it('gets upgrade status (long-running progress)', async () => {
+    const client = mockClient({
+      get: vi.fn().mockResolvedValue({ status: 'running', log: 'downloading...' }),
+    });
+
+    const result = await handleFirmwareTool('opnsense_firmware_upgrade_status', {}, client);
+    expect(result.content[0].text).toContain('running');
+    expect(client.get).toHaveBeenCalledWith('/core/firmware/upgradestatus');
+  });
+
+  it('triggers a reboot with confirmation', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ status: 'ok' }),
+    });
+
+    const result = await handleFirmwareTool('opnsense_firmware_reboot', { confirm: true }, client);
+
+    expect(result.content[0].text).toContain('ok');
+    expect(client.post).toHaveBeenCalledWith('/core/firmware/reboot');
+  });
+
+  it('rejects reboot without confirmation', async () => {
+    const client = mockClient();
+    const result = await handleFirmwareTool('opnsense_firmware_reboot', { confirm: false }, client);
+    expect(result.content[0].text).toContain('Error');
+    expect(client.post).not.toHaveBeenCalled();
   });
 
   it('handles API errors gracefully', async () => {

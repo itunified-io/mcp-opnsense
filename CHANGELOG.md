@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.29.1
+
+- **feat: add firmware upgrade + reboot tools** (#110)
+  - New tool `opnsense_firmware_upgrade` (POST `/core/firmware/upgrade`) — triggers a system upgrade for whatever `opnsense_firmware_status` reports (minor packages or major-series jump). Long-running. Requires `confirm: true`.
+  - New tool `opnsense_firmware_upgrade_status` (GET `/core/firmware/upgradestatus`) — returns progress/log of a running or just-completed upgrade. Read-only, safe to poll.
+  - New tool `opnsense_firmware_reboot` (POST `/core/firmware/reboot`) — reboots the OPNsense system. Requires `confirm: true`.
+  - Firmware tool count: 5 → 8
+  - 6 new unit tests (140 total, all green)
+  - Tool placement decision (ADR-0041): public repo — basic firmware lifecycle ops, symmetric with existing install/remove
+
 ## v2026.04.10.5
 
 - **fix: opnsense_fw_reorder_rules fails with 'Unexpected error' on setRule** (#108)
