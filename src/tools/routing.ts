@@ -105,6 +105,11 @@ export const routingToolDefinitions = [
     description: "List all available gateways (used as targets for static routes)",
     inputSchema: { type: "object" as const, properties: {} },
   },
+  {
+    name: "opnsense_route_gateway_status",
+    description: "Get live gateway monitor status: per-gateway online/offline state, RTT (delay), packet loss, stddev, monitor IP, and monitor_disable flag. Read-only — complements opnsense_route_gateway_list (which only returns config).",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -171,6 +176,11 @@ export async function handleRoutingTool(
 
       case "opnsense_route_gateway_list": {
         const result = await client.get("/routing/settings/searchGateway");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_route_gateway_status": {
+        const result = await client.get("/routes/gateway/status");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.29.2
+
+- **feat: add system log + gateway status tools** (#113)
+  - 4 new log tools (read-only): `opnsense_diag_log_system`, `opnsense_diag_log_gateways`, `opnsense_diag_log_routing`, `opnsense_diag_log_resolver` — wrap `GET /diagnostics/log/core/{scope}`. Optional `limit` (1–5000, default 500).
+  - 1 new gateway tool (read-only): `opnsense_route_gateway_status` — wraps `GET /routes/gateway/status`. Returns per-gateway live monitor state (online/offline, RTT, loss, stddev, monitor IP, monitor_disable flag). Complements `route_gateway_list` (config-only).
+  - Diagnostics tool count: 8 → 12; routing tool count: 6 → 7
+  - 11 new unit tests (151 total, all green)
+  - Tool placement (ADR-0041): public — read-only, symmetric with existing diag/route families
+  - Out of scope (separate spike): write tool `opnsense_route_gateway_update` to toggle `monitor_disable` and set monitor IP
+
 ## v2026.04.29.1
 
 - **feat: add firmware upgrade + reboot tools** (#110)

@@ -28,6 +28,10 @@ const FwLogsSchema = z.object({
   limit: z.number().int().min(1).max(5000).optional().default(50),
 });
 
+const LogQuerySchema = z.object({
+  limit: z.number().int().min(1).max(5000).optional().default(500),
+});
+
 // ---------------------------------------------------------------------------
 // Tool definitions (for ListTools)
 // ---------------------------------------------------------------------------
@@ -134,6 +138,46 @@ export const diagnosticsToolDefinitions = [
     name: "opnsense_diag_system_info",
     description: "Get system status information (CPU, memory, uptime, disk, versions)",
     inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_diag_log_system",
+    description: "Retrieve recent OPNsense system log entries (kernel, generic system events).",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        limit: { type: "number", description: "Number of log entries (1-5000, default 500)" },
+      },
+    },
+  },
+  {
+    name: "opnsense_diag_log_gateways",
+    description: "Retrieve recent OPNsense gateway monitoring (dpinger) log entries — useful for WAN/gateway health debugging.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        limit: { type: "number", description: "Number of log entries (1-5000, default 500)" },
+      },
+    },
+  },
+  {
+    name: "opnsense_diag_log_routing",
+    description: "Retrieve recent OPNsense routing daemon log entries.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        limit: { type: "number", description: "Number of log entries (1-5000, default 500)" },
+      },
+    },
+  },
+  {
+    name: "opnsense_diag_log_resolver",
+    description: "Retrieve recent Unbound DNS resolver log entries.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        limit: { type: "number", description: "Number of log entries (1-5000, default 500)" },
+      },
+    },
   },
 ];
 
@@ -280,6 +324,30 @@ export async function handleDiagnosticsTool(
 
       case "opnsense_diag_system_info": {
         const result = await client.get("/core/system/status");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_diag_log_system": {
+        const parsed = LogQuerySchema.parse(args);
+        const result = await client.get(`/diagnostics/log/core/system?limit=${parsed.limit}`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_diag_log_gateways": {
+        const parsed = LogQuerySchema.parse(args);
+        const result = await client.get(`/diagnostics/log/core/gateways?limit=${parsed.limit}`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_diag_log_routing": {
+        const parsed = LogQuerySchema.parse(args);
+        const result = await client.get(`/diagnostics/log/core/routing?limit=${parsed.limit}`);
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_diag_log_resolver": {
+        const parsed = LogQuerySchema.parse(args);
+        const result = await client.get(`/diagnostics/log/core/resolver?limit=${parsed.limit}`);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
