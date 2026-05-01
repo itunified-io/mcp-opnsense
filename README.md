@@ -337,7 +337,7 @@ populated-count appear in stderr diagnostics. The loader uses the global
 | `opnsense_fw_manage_alias` | Create/update/delete aliases |
 | `opnsense_fw_apply` | Apply pending firewall changes |
 
-### Diagnostics (8 tools)
+### Diagnostics (12 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -349,6 +349,10 @@ populated-count appear in stderr diagnostics. The loader uses the global
 | `opnsense_diag_fw_states` | List active firewall connection states |
 | `opnsense_diag_fw_logs` | Retrieve recent firewall log entries |
 | `opnsense_diag_system_info` | Get system status (CPU, memory, uptime, disk) |
+| `opnsense_diag_log_system` | Retrieve recent system log entries |
+| `opnsense_diag_log_gateways` | Retrieve recent gateway monitoring (dpinger) log entries |
+| `opnsense_diag_log_routing` | Retrieve recent routing daemon log entries |
+| `opnsense_diag_log_resolver` | Retrieve recent Unbound DNS resolver log entries |
 
 ### Interfaces (5 tools)
 
