@@ -24,12 +24,14 @@ const DnsLookupSchema = z.object({
   hostname: z.string().min(1, "Hostname or IP address is required"),
 });
 
+// Use z.coerce.number() because MCP transports serialize numeric tool params as
+// strings — see #116 (mirror of mcp-cloudflare proxied boolean bug).
 const FwLogsSchema = z.object({
-  limit: z.number().int().min(1).max(5000).optional().default(50),
+  limit: z.coerce.number().int().min(1).max(5000).optional().default(50),
 });
 
 const LogQuerySchema = z.object({
-  limit: z.number().int().min(1).max(5000).optional().default(500),
+  limit: z.coerce.number().int().min(1).max(5000).optional().default(500),
 });
 
 // ---------------------------------------------------------------------------

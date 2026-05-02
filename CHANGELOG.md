@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.29.3
+
+- **fix: log + fw_logs `limit` param fails Zod validation** (#116)
+  - MCP transport serializes numeric params as strings; `z.number()` rejects them
+  - Replaced `z.number()` → `z.coerce.number()` in `LogQuerySchema` (4 log tools) and `FwLogsSchema` (`diag_fw_logs`)
+  - Same root cause as the mcp-cloudflare `proxied` boolean bug
+  - 1 new test (152 total, all green)
+
 ## v2026.04.29.2
 
 - **feat: add system log + gateway status tools** (#113)
