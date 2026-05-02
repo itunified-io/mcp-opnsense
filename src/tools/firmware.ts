@@ -9,23 +9,25 @@ const PackageSchema = z.object({
   package: z.string().min(1, "Package name is required"),
 });
 
+// MCP transports may serialize booleans as strings — coerce "true" → true
+// before the literal check (same root cause as #116 for numbers).
+const ConfirmTrue = (msg: string) =>
+  z.preprocess(
+    (v) => (v === "true" ? true : v === "false" ? false : v),
+    z.literal(true, { errorMap: () => ({ message: msg }) }),
+  );
+
 const RemovePackageSchema = z.object({
   package: z.string().min(1, "Package name is required"),
-  confirm: z.literal(true, {
-    errorMap: () => ({ message: "confirm must be true to proceed with package removal" }),
-  }),
+  confirm: ConfirmTrue("confirm must be true to proceed with package removal"),
 });
 
 const UpgradeSchema = z.object({
-  confirm: z.literal(true, {
-    errorMap: () => ({ message: "confirm must be true to proceed with the system upgrade" }),
-  }),
+  confirm: ConfirmTrue("confirm must be true to proceed with the system upgrade"),
 });
 
 const RebootSchema = z.object({
-  confirm: z.literal(true, {
-    errorMap: () => ({ message: "confirm must be true to proceed with the reboot" }),
-  }),
+  confirm: ConfirmTrue("confirm must be true to proceed with the reboot"),
 });
 
 // ---------------------------------------------------------------------------
