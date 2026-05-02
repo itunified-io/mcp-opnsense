@@ -42,7 +42,13 @@ export const firmwareToolDefinitions = [
   {
     name: "opnsense_firmware_status",
     description:
-      "Check for available firmware upgrades and their status (running, pending, done)",
+      "Check for available firmware upgrades and their status (running, pending, done). Reads the cached state — call 'opnsense_firmware_check' first if the cache may be stale.",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_firmware_check",
+    description:
+      "Trigger a background firmware repository check to refresh the cached upgrade status. After calling this, wait briefly and then call 'opnsense_firmware_status' to see fresh upgrade info.",
     inputSchema: { type: "object" as const, properties: {} },
   },
   {
@@ -144,6 +150,11 @@ export async function handleFirmwareTool(
 
       case "opnsense_firmware_status": {
         const result = await client.get("/core/firmware/status");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_firmware_check": {
+        const result = await client.post("/core/firmware/check");
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
