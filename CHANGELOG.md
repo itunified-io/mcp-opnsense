@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.29.5
+
+- **fix: confirm parameter rejects boolean true (MCP sends as string)** (#120)
+  - Same transport bug pattern as #116 (number coerce); booleans also serialized as strings by MCP
+  - New `ConfirmTrue()` helper using `z.preprocess` to coerce `"true"`/`"false"` strings to booleans before literal check
+  - Affects: `firmware_upgrade`, `firmware_reboot`, `firmware_remove`
+  - 3 new tests (156 total green)
+
 ## v2026.04.29.4
 
 - **feat: add opnsense_firmware_check** (#118)

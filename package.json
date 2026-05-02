@@ -1,6 +1,6 @@
 {
   "name": "@itunified.io/mcp-opnsense",
-  "version": "2026.4.29-4",
+  "version": "2026.4.29-5",
   "description": "Slim OPNsense MCP Server — DNS, Firewall, Diagnostics, DHCP, System management via OPNsense REST API",
   "type": "module",
   "main": "dist/index.js",

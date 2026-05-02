@@ -147,6 +147,44 @@ describe('handleFirmwareTool', () => {
     expect(client.post).toHaveBeenCalledWith('/core/firmware/upgrade');
   });
 
+  it('coerces string "true" to true on upgrade confirm (MCP transport)', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ status: 'ok', msg_uuid: 'abc-123' }),
+    });
+    const result = await handleFirmwareTool(
+      'opnsense_firmware_upgrade',
+      { confirm: 'true' as unknown as true },
+      client,
+    );
+    expect(result.content[0].text).toContain('ok');
+    expect(client.post).toHaveBeenCalledWith('/core/firmware/upgrade');
+  });
+
+  it('coerces string "true" to true on reboot confirm', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ status: 'ok' }),
+    });
+    const result = await handleFirmwareTool(
+      'opnsense_firmware_reboot',
+      { confirm: 'true' as unknown as true },
+      client,
+    );
+    expect(result.content[0].text).toContain('ok');
+    expect(client.post).toHaveBeenCalledWith('/core/firmware/reboot');
+  });
+
+  it('coerces string "true" to true on remove confirm', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ status: 'ok' }),
+    });
+    const result = await handleFirmwareTool(
+      'opnsense_firmware_remove',
+      { package: 'os-acme-client', confirm: 'true' as unknown as true },
+      client,
+    );
+    expect(client.post).toHaveBeenCalledWith('/core/firmware/remove/os-acme-client');
+  });
+
   it('rejects upgrade without confirmation', async () => {
     const client = mockClient();
     const result = await handleFirmwareTool('opnsense_firmware_upgrade', { confirm: false }, client);
