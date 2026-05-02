@@ -12,8 +12,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('Firmware Tool Definitions', () => {
-  it('exports 8 tool definitions', () => {
-    expect(firmwareToolDefinitions).toHaveLength(8);
+  it('exports 9 tool definitions', () => {
+    expect(firmwareToolDefinitions).toHaveLength(9);
   });
 
   it('all tools have opnsense_firmware_ prefix', () => {
@@ -125,6 +125,15 @@ describe('handleFirmwareTool', () => {
     const client = mockClient();
     const result = await handleFirmwareTool('opnsense_firmware_nonexistent', {}, client);
     expect(result.content[0].text).toContain('Unknown');
+  });
+
+  it('triggers a firmware check (refresh repo)', async () => {
+    const client = mockClient({
+      post: vi.fn().mockResolvedValue({ status: 'ok' }),
+    });
+    const result = await handleFirmwareTool('opnsense_firmware_check', {}, client);
+    expect(result.content[0].text).toContain('ok');
+    expect(client.post).toHaveBeenCalledWith('/core/firmware/check');
   });
 
   it('triggers a system upgrade with confirmation', async () => {

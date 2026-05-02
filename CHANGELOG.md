@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.04.29.4
+
+- **feat: add opnsense_firmware_check** (#118)
+  - POST `/core/firmware/check` to refresh cached repo state
+  - Required before `firmware_status` after cache TTL expires
+  - 1 new test (153 total green)
+
 ## v2026.04.29.3
 
 - **fix: log + fw_logs `limit` param fails Zod validation** (#116)
