@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.05.02.1
+
+- **feat: add opnsense_route_gateway_update + _apply** (#115)
+  - `opnsense_route_gateway_update` (POST `/routing/settings/setGateway/{uuid}`) — round-trips current gateway config and overrides only explicitly provided fields. Supports `monitor_disable`, `monitor`, `disabled`, `defaultgw`, `description`, `weight`, `priority`. Uses `extractSelected()` to flatten OPNsense multi-select objects. Requires `confirm: true`.
+  - `opnsense_route_gateway_apply` (POST `/routing/settings/reconfigure`) — activates pending gateway changes. Requires `confirm: true`.
+  - New shared helpers in `routing.ts`: `ConfirmTrue()` for boolean coerce on confirm, `CoerceBoolean` for "0"/"1"/"true"/"false" inputs, `boolToFlag()` for output.
+  - 6 new tests (162 total green)
+  - Verified live against OPNsense 25.1 "Ultimate Unicorn"
+
 ## v2026.04.29.5
 
 - **fix: confirm parameter rejects boolean true (MCP sends as string)** (#120)
