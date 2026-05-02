@@ -1,6 +1,22 @@
 import { z } from "zod";
 import type { OPNsenseClient } from "../client/opnsense-client.js";
 import { UuidSchema } from "../utils/validation.js";
+import { extractSelected } from "./firewall.js";
+
+// MCP transports may serialize booleans as strings — coerce "true"/"false"
+// before the literal check (see #120).
+const ConfirmTrue = (msg: string) =>
+  z.preprocess(
+    (v) => (v === "true" ? true : v === "false" ? false : v),
+    z.literal(true, { errorMap: () => ({ message: msg }) }),
+  );
+
+// Coerce booleans that may arrive as MCP-string from clients.
+const CoerceBoolean = z.preprocess((v) => {
+  if (v === "true" || v === "1" || v === 1) return true;
+  if (v === "false" || v === "0" || v === 0) return false;
+  return v;
+}, z.boolean());
 
 // ---------------------------------------------------------------------------
 // Zod schemas for input validation
@@ -31,6 +47,29 @@ const UpdateRouteSchema = z.object({
 const DeleteRouteSchema = z.object({
   uuid: UuidSchema,
 });
+
+const GatewayUpdateSchema = z.object({
+  uuid: UuidSchema,
+  monitor_disable: CoerceBoolean.optional(),
+  monitor: z.string().optional(),
+  disabled: CoerceBoolean.optional(),
+  defaultgw: CoerceBoolean.optional(),
+  description: z.string().optional(),
+  weight: z.coerce.number().int().min(1).max(30).optional(),
+  priority: z.coerce.number().int().min(1).max(255).optional(),
+  confirm: ConfirmTrue("confirm must be true to proceed with the gateway update"),
+});
+
+const GatewayApplySchema = z.object({
+  confirm: ConfirmTrue("confirm must be true to apply gateway configuration"),
+});
+
+// Convert a JS boolean (true/false) or pass-through string ("0"/"1") to OPNsense's
+// expected "0" / "1" string representation.
+function boolToFlag(v: boolean | undefined): string | undefined {
+  if (v === undefined) return undefined;
+  return v ? "1" : "0";
+}
 
 // ---------------------------------------------------------------------------
 // Tool definitions (for ListTools)
@@ -110,6 +149,36 @@ export const routingToolDefinitions = [
     description: "Get live gateway monitor status: per-gateway online/offline state, RTT (delay), packet loss, stddev, monitor IP, and monitor_disable flag. Read-only — complements opnsense_route_gateway_list (which only returns config).",
     inputSchema: { type: "object" as const, properties: {} },
   },
+  {
+    name: "opnsense_route_gateway_update",
+    description: "Update an existing gateway's settings (toggle monitoring, set monitor IP, change weight/priority, enable/disable). Round-trips current config and only overrides explicitly provided fields. After updating, call opnsense_route_gateway_apply to activate the change. DESTRUCTIVE: requires explicit confirmation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        uuid: { type: "string", description: "Gateway UUID (from opnsense_route_gateway_list)" },
+        monitor_disable: { type: "boolean", description: "Disable gateway monitoring (true = no health probe)" },
+        monitor: { type: "string", description: "Monitor IP address (used when monitor_disable=false). Empty string clears it." },
+        disabled: { type: "boolean", description: "Disable the gateway entirely" },
+        defaultgw: { type: "boolean", description: "Mark as default gateway" },
+        description: { type: "string", description: "Human-readable description" },
+        weight: { type: "number", description: "Load-balancing weight (1-30)" },
+        priority: { type: "number", description: "Failover priority (1-255, lower = higher priority)" },
+        confirm: { type: "boolean", description: "Must be true to confirm the update", enum: [true] },
+      },
+      required: ["uuid", "confirm"],
+    },
+  },
+  {
+    name: "opnsense_route_gateway_apply",
+    description: "Apply pending gateway configuration changes (calls /api/routing/settings/reconfigure). Required after opnsense_route_gateway_update for changes to take effect. May briefly affect WAN connectivity. DESTRUCTIVE: requires explicit confirmation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        confirm: { type: "boolean", description: "Must be true to confirm the apply", enum: [true] },
+      },
+      required: ["confirm"],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -181,6 +250,68 @@ export async function handleRoutingTool(
 
       case "opnsense_route_gateway_status": {
         const result = await client.get("/routes/gateway/status");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_route_gateway_update": {
+        const parsed = GatewayUpdateSchema.parse(args);
+
+        // Round-trip: get current state, flatten multi-selects, override only provided fields
+        const current = (await client.get<{ gateway_item?: Record<string, unknown> }>(
+          `/routing/settings/getGateway/${encodeURIComponent(parsed.uuid)}`,
+        ))?.gateway_item ?? {};
+
+        const flat: Record<string, unknown> = {
+          name: extractSelected(current["name"]) ?? current["name"],
+          descr: parsed.description ?? (extractSelected(current["descr"]) ?? current["descr"] ?? ""),
+          interface: extractSelected(current["interface"]) ?? "",
+          ipprotocol: extractSelected(current["ipprotocol"]) ?? "inet",
+          gateway: extractSelected(current["gateway"]) ?? current["gateway"] ?? "",
+          defaultgw:
+            boolToFlag(parsed.defaultgw) ??
+            (extractSelected(current["defaultgw"]) ?? current["defaultgw"] ?? "0"),
+          fargw: extractSelected(current["fargw"]) ?? current["fargw"] ?? "",
+          monitor_disable:
+            boolToFlag(parsed.monitor_disable) ??
+            (extractSelected(current["monitor_disable"]) ?? current["monitor_disable"] ?? "0"),
+          monitor_noroute:
+            extractSelected(current["monitor_noroute"]) ?? current["monitor_noroute"] ?? "",
+          monitor:
+            parsed.monitor !== undefined
+              ? parsed.monitor
+              : (extractSelected(current["monitor"]) ?? current["monitor"] ?? ""),
+          force_down: extractSelected(current["force_down"]) ?? current["force_down"] ?? "",
+          priority:
+            parsed.priority !== undefined
+              ? String(parsed.priority)
+              : (extractSelected(current["priority"]) ?? current["priority"] ?? "255"),
+          weight:
+            parsed.weight !== undefined
+              ? String(parsed.weight)
+              : (extractSelected(current["weight"]) ?? current["weight"] ?? "1"),
+          latencylow: extractSelected(current["latencylow"]) ?? current["latencylow"] ?? "",
+          latencyhigh: extractSelected(current["latencyhigh"]) ?? current["latencyhigh"] ?? "",
+          losslow: extractSelected(current["losslow"]) ?? current["losslow"] ?? "",
+          losshigh: extractSelected(current["losshigh"]) ?? current["losshigh"] ?? "",
+          interval: extractSelected(current["interval"]) ?? current["interval"] ?? "",
+          time_period: extractSelected(current["time_period"]) ?? current["time_period"] ?? "",
+          loss_interval: extractSelected(current["loss_interval"]) ?? current["loss_interval"] ?? "",
+          data_length: extractSelected(current["data_length"]) ?? current["data_length"] ?? "",
+          disabled:
+            boolToFlag(parsed.disabled) ??
+            (extractSelected(current["disabled"]) ?? current["disabled"] ?? "0"),
+        };
+
+        const result = await client.post(
+          `/routing/settings/setGateway/${encodeURIComponent(parsed.uuid)}`,
+          { gateway_item: flat },
+        );
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_route_gateway_apply": {
+        GatewayApplySchema.parse(args);
+        const result = await client.post("/routing/settings/reconfigure", {});
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
