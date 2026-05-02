@@ -66,6 +66,12 @@ describe('handleDiagnosticsTool — log endpoints', () => {
     expect(client.get).not.toHaveBeenCalled();
   });
 
+  it('coerces string limit to number (MCP transport sends numbers as strings)', async () => {
+    const client = mockClient();
+    await handleDiagnosticsTool('opnsense_diag_log_gateways', { limit: '100' as unknown as number }, client);
+    expect(client.get).toHaveBeenCalledWith('/diagnostics/log/core/gateways?limit=100');
+  });
+
   it('handles API errors gracefully', async () => {
     const client = mockClient({
       get: vi.fn().mockRejectedValue(new Error('502 Bad Gateway')),
