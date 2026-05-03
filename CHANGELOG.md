@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.05.03.1
+
+- **feat: Source NAT (SNAT) tools** (#123 partial)
+  - 7 new tools (`opnsense_nat_source_{list,get,add,update,delete,toggle}` + `opnsense_nat_apply`) wrapping `/api/firewall/source_nat/*`
+  - Round-trip update pattern using `extractSelected()` for multi-select fields
+  - Full Zod schemas with `confirm` gate (boolean coerce per #120) on all destructive ops
+  - Verified live against OPNsense 26.1.7 "Witty Woodpecker"
+  - **DNAT (port forwarding) deferred**: probed all candidate endpoints (`firewall/destination_nat/*`, `firewall/portforward/*`, `firewall/redirect/*`, `firewall/dnat/*`) — all return 404 in 26.1.7. Will follow once OPNsense exposes a stable DNAT API.
+- **feat: Unbound DNSBL multi-source blocklist tools** (#125)
+  - 3 new tools: `opnsense_dns_blocklist_get` (read), `opnsense_dns_blocklist_sources_list` (read, with selected state), `opnsense_dns_blocklist_set` (write, requires `confirm: true`)
+  - Wraps `/api/unbound/settings/{getDnsbl,setDnsbl}` — multi-source feature moved to CE in OPNsense 26.1
+  - Discovered ~40 built-in feeds (AdGuard, EasyList, hagezi family, Steven Black, Abuse.ch, etc.)
+  - Round-trip pattern preserves currently-selected sources when caller omits `sources`
+- 19 new unit tests (181 total green)
+
 ## v2026.05.02.1
 
 - **feat: add opnsense_route_gateway_update + _apply** (#115)
