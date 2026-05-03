@@ -46,6 +46,27 @@ const DnsFlushZoneSchema = z.object({
   domain: DomainSchema,
 });
 
+// DNSBL multi-source (26.1+, OPNsense moved this to CE)
+const ConfirmTrueDnsbl = z.preprocess(
+  (v) => (v === "true" ? true : v === "false" ? false : v),
+  z.literal(true, {
+    errorMap: () => ({ message: "confirm must be true to update DNSBL configuration" }),
+  }),
+);
+const CoerceBoolDnsbl = z.preprocess((v) => {
+  if (v === "true" || v === "1" || v === 1) return true;
+  if (v === "false" || v === "0" || v === 0) return false;
+  return v;
+}, z.boolean());
+
+const BlocklistSetSchema = z.object({
+  enabled: CoerceBoolDnsbl.optional(),
+  sources: z.array(z.string()).optional(),
+  custom_lists: z.string().optional(),
+  nxdomain: CoerceBoolDnsbl.optional(),
+  confirm: ConfirmTrueDnsbl,
+});
+
 const DnsCacheSearchSchema = z.object({
   domain: z.string().min(1, "Domain filter is required"),
 });
@@ -211,6 +232,51 @@ export const dnsToolDefinitions = [
       "Dump the Unbound infrastructure cache showing upstream server RTT, EDNS support, and lame delegation status. Useful for diagnosing upstream DNS connectivity issues.",
     inputSchema: { type: "object" as const, properties: {} },
   },
+  {
+    name: "opnsense_dns_blocklist_get",
+    description:
+      "Get the Unbound DNSBL (DNS blocklist) configuration: enabled flag, selected built-in source IDs, custom URLs, NX-domain mode, allowlist. Read-only.",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_dns_blocklist_sources_list",
+    description:
+      "List all available built-in DNSBL block-list sources (curated feeds like AdGuard, EasyList, hagezi, Steven Black, etc.) with their internal IDs and selected state. Read-only.",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_dns_blocklist_set",
+    description:
+      "Update the Unbound DNSBL configuration: enable/disable, select multiple built-in source IDs, set custom blocklist URLs, configure NX-domain mode. After this, call opnsense_dns_apply to activate. DESTRUCTIVE: requires explicit confirmation.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        enabled: {
+          type: "boolean",
+          description: "Master enable for the DNSBL feature",
+        },
+        sources: {
+          type: "array",
+          items: { type: "string" },
+          description: "List of built-in source IDs to enable (use opnsense_dns_blocklist_sources_list to discover available IDs, e.g. 'hgz002', 'sb', 'ag')",
+        },
+        custom_lists: {
+          type: "string",
+          description: "Comma- or newline-separated list of custom blocklist URLs (one per line)",
+        },
+        nxdomain: {
+          type: "boolean",
+          description: "Return NXDOMAIN instead of 0.0.0.0 for blocked entries",
+        },
+        confirm: {
+          type: "boolean",
+          enum: [true],
+          description: "Must be true to apply the change",
+        },
+      },
+      required: ["confirm"],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -366,6 +432,72 @@ export async function handleDnsTool(
 
       case "opnsense_dns_infra": {
         const result = await client.get("/unbound/diagnostics/dumpinfra");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_dns_blocklist_get": {
+        const result = await client.get("/unbound/settings/getDnsbl");
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_dns_blocklist_sources_list": {
+        const raw = (await client.get<{ blocklist?: { type?: Record<string, unknown> } }>(
+          "/unbound/settings/getDnsbl",
+        ));
+        const types = raw?.blocklist?.type ?? {};
+        const sources: Array<{ id: string; name: string; selected: boolean }> = [];
+        for (const [id, v] of Object.entries(types)) {
+          if (v && typeof v === "object") {
+            const o = v as Record<string, unknown>;
+            sources.push({
+              id,
+              name: String(o.value ?? ""),
+              selected: o.selected === 1 || o.selected === "1",
+            });
+          }
+        }
+        return { content: [{ type: "text", text: JSON.stringify({ sources, total: sources.length }, null, 2) }] };
+      }
+
+      case "opnsense_dns_blocklist_set": {
+        const p = BlocklistSetSchema.parse(args);
+        const current = (await client.get<{ blocklist?: Record<string, unknown> }>(
+          "/unbound/settings/getDnsbl",
+        ))?.blocklist ?? {};
+
+        // Read currently-selected source IDs (multi-select)
+        const currentTypeObj = (current["type"] as Record<string, unknown>) ?? {};
+        const currentSources: string[] = [];
+        for (const [id, v] of Object.entries(currentTypeObj)) {
+          if (v && typeof v === "object" && ((v as Record<string, unknown>).selected === 1 || (v as Record<string, unknown>).selected === "1")) {
+            currentSources.push(id);
+          }
+        }
+
+        const payload: Record<string, unknown> = {
+          enabled:
+            p.enabled === undefined
+              ? (current["enabled"] ?? "1")
+              : (p.enabled ? "1" : "0"),
+          // OPNsense expects multi-select as comma-separated IDs
+          type: (p.sources ?? currentSources).join(","),
+          lists:
+            p.custom_lists !== undefined
+              ? p.custom_lists
+              : (current["lists"] ?? ""),
+          nxdomain:
+            p.nxdomain === undefined
+              ? (current["nxdomain"] ?? "0")
+              : (p.nxdomain ? "1" : "0"),
+          // Preserve other fields if present
+          whitelists: current["whitelists"] ?? "",
+          blocklists: current["blocklists"] ?? "",
+          wildcards: current["wildcards"] ?? "",
+          address: current["address"] ?? "",
+          safesearch: current["safesearch"] ?? "0",
+        };
+
+        const result = await client.post("/unbound/settings/setDnsbl", { blocklist: payload });
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 

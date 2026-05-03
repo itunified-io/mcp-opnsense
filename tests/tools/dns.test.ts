@@ -12,8 +12,8 @@ function mockClient(overrides: Partial<OPNsenseClient> = {}): OPNsenseClient {
 }
 
 describe('DNS Tool Definitions', () => {
-  it('exports 16 tool definitions', () => {
-    expect(dnsToolDefinitions).toHaveLength(16);
+  it('exports 19 tool definitions', () => {
+    expect(dnsToolDefinitions).toHaveLength(19);
   });
 
   it('all tools have opnsense_dns_ prefix', () => {

@@ -305,7 +305,9 @@ populated-count appear in stderr diagnostics. The loader uses the global
 
 ## Available Tools (87)
 
-### DNS/Unbound (12 tools)
+### DNS/Unbound (19 tools)
+
+Includes DNSBL (multi-source blocklist) management — `opnsense_dns_blocklist_get`, `opnsense_dns_blocklist_sources_list`, `opnsense_dns_blocklist_set` — for OPNsense 26.1+.
 
 | Tool | Description |
 |------|-------------|
@@ -321,6 +323,22 @@ populated-count appear in stderr diagnostics. The loader uses the global
 | `opnsense_dns_flush_cache` | Flush DNS cache and DNSBL data |
 | `opnsense_dns_diagnostics` | Dump DNS cache for diagnostics |
 | `opnsense_dns_apply` | Apply DNS changes (reconfigure Unbound) |
+
+### NAT (7 tools)
+
+Source NAT (outbound) tools wrapping `/api/firewall/source_nat/*` (OPNsense 26.1+):
+
+| Tool | Description |
+|------|-------------|
+| `opnsense_nat_source_list` | List all SNAT rules |
+| `opnsense_nat_source_get` | Get a single SNAT rule by UUID |
+| `opnsense_nat_source_add` | Add a SNAT rule (requires `confirm: true`) |
+| `opnsense_nat_source_update` | Round-trip update of an existing SNAT rule (requires `confirm: true`) |
+| `opnsense_nat_source_delete` | Delete a SNAT rule (requires `confirm: true`) |
+| `opnsense_nat_source_toggle` | Toggle a SNAT rule's enabled state (requires `confirm: true`) |
+| `opnsense_nat_apply` | Apply pending NAT changes (requires `confirm: true`) |
+
+Note: Destination NAT (port forwarding) endpoints are not yet exposed by OPNsense 26.1.7; see issue #123 for the deferred portion.
 
 ### Firewall (10 tools)
 
