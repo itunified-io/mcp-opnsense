@@ -25,6 +25,26 @@ Slim OPNsense MCP Server for managing firewall infrastructure via the OPNsense R
 - [Security](#security)
 - [Development](#development)
 - [License](#license)
+- [Enterprise Edition](#enterprise-edition)
+
+## Enterprise Edition
+
+For audit + compliance reporting, multi-firewall fleet operations,
+encrypted backup orchestration, capacity forecasting, advanced IDS
+tuning, and Q-Feeds Premium feeds, see the commercial tier:
+
+> **[`mcp-opnsense-enterprise`](https://github.com/itunified-io/mcp-opnsense-enterprise)** — €29/month/seat
+
+Tier comparison:
+
+| Tier | This repo | Enterprise repo |
+|------|-----------|-----------------|
+| License | AGPL-3.0-only | Commercial (Ed25519 JWT) |
+| Pricing | Free | €29/mo/seat |
+| Tools | 112 (basic CRUD + diagnostics) | + ~35 (audit, compliance, fleet, backup_ops, capacity, ha, ids_advanced, qfeeds_premium) |
+| Use case | Single-firewall ops | Multi-firewall + audit/compliance workflows |
+
+Trial token: **sales@itunified.io**.
 
 ## Features
 
@@ -541,9 +561,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## License
 
-This project is dual-licensed:
+This project (`mcp-opnsense`, the **Community Edition**) is licensed under
+the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE). It is
+free to use under AGPL terms.
 
-- **Open Source**: [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE) — free for open-source and non-commercial use
-- **Commercial**: Available for proprietary integrations — see [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md)
+For audit, compliance, fleet, backup orchestration, capacity forecasting,
+advanced IDS, Q-Feeds Premium, and HA tooling, see the **Business Edition**:
+[`mcp-opnsense-enterprise`](https://github.com/itunified-io/mcp-opnsense-enterprise)
+(commercial license, €29/mo/seat).
 
-If you use mcp-opnsense in a proprietary product or SaaS offering, a commercial license is required. Support development by [sponsoring us on GitHub](https://github.com/sponsors/itunified-io).
+Support development by [sponsoring us on GitHub](https://github.com/sponsors/itunified-io).
