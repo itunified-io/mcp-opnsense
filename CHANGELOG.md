@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.05.06.4
+
+- **chore: revert broken system_tunable_* tools** (#137 — supersedes #133)
+  - Removes `opnsense_sys_tunable_list`, `opnsense_sys_tunable_get`, `opnsense_sys_tunable_set` shipped in v2026.05.06.1.
+  - **Empirical finding**: every candidate API path returns 404 — `/api/system/settings/{searchTunable,addTunable,setTunable,reconfigure}`, `/api/system/{system_tunables,sysctl,general}/searchTunable`, `/api/system_advanced/get`, `/api/sysctl/searchItem`. OPNsense exposes no public REST controller for FreeBSD sysctl tunables.
+  - Tunables live in `config.xml` under `<sysctl>` and are managed exclusively via the legacy PHP UI (`System → Settings → Tunables`).
+  - Workaround: XML-config roundtrip via `opnsense_sys_backup_download` → edit `<sysctl>` block → `opnsense_sys_backup_revert`. Heavyweight; UI is the recommended path.
+  - System tools count: 10 → 7.
+- **docs: log_* endpoints require Diagnostics: Logfile API user privilege** (#132 follow-up)
+  - The 3-tier fallback chain shipped in v2026.05.06.3 is functionally correct — endpoints exist (200 OK) but return `"total":0` when the OPNsense API user lacks the `Diagnostics: Logfile` privilege.
+  - README updated to document the privilege requirement. No code change needed; once the privilege is granted in System → Access → Users, all 4 `opnsense_diag_log_*` tools start returning real data.
+
 ## v2026.05.06.3
 
 - **fix: log_system / log_gateways / log_routing / log_resolver no longer return empty arrays** (#132)

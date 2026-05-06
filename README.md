@@ -463,7 +463,7 @@ spike, empirical findings, and rollback contract.
 | `opnsense_dhcp_add_static` | Add a static DHCP mapping |
 | `opnsense_dhcp_delete_static` | Delete a static mapping by UUID |
 
-### System (10 tools)
+### System (7 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -474,9 +474,10 @@ spike, empirical findings, and rollback contract.
 | `opnsense_sys_list_certs` | List all certificates in the trust store |
 | `opnsense_svc_list` | List all services and their running status |
 | `opnsense_svc_control` | Start, stop, or restart a service by name |
-| `opnsense_sys_tunable_list` | List all configured FreeBSD sysctl tunables (System → Settings → Tunables) |
-| `opnsense_sys_tunable_get` | Get a single configured tunable by sysctl name |
-| `opnsense_sys_tunable_set` | Upsert a tunable (creates or updates) and optionally apply via reconfigure |
+
+> **Note on tunables**: `opnsense_sys_tunable_*` tools shipped briefly in v2026.5.6-1 (#133) were reverted in v2026.5.6-4 (#137). OPNsense exposes no public REST API for FreeBSD sysctl tunables — they live in `config.xml` under `<sysctl>` and are managed via the legacy PHP UI (System → Settings → Tunables). Tunable management can be approximated via XML-config roundtrip (`opnsense_sys_backup_download` + edit + `opnsense_sys_backup_revert`).
+>
+> **Note on diagnostic logs**: `opnsense_diag_log_{system,gateways,routing,resolver}` require the API user to have **Diagnostics: Logfile** privilege in OPNsense (System → Access → Users). Without this privilege the endpoints return 200 OK but with `"total":0`. The `opnsense_diag_fw_logs` tool uses a separate privilege (Firewall: Diagnostics) that's typically already granted.
 
 ### ACME/Let's Encrypt (14 tools)
 
