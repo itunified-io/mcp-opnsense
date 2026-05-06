@@ -70,7 +70,7 @@ for (const def of tailscaleToolDefinitions) toolHandlers.set(def.name, handleTai
 for (const def of natToolDefinitions) toolHandlers.set(def.name, handleNatTool);
 
 const server = new Server(
-  { name: 'mcp-opnsense', version: '2026.4.10-4' },
+  { name: 'mcp-opnsense', version: '2026.5.6-1' },
   { capabilities: { tools: {} } }
 );
 

@@ -463,7 +463,7 @@ spike, empirical findings, and rollback contract.
 | `opnsense_dhcp_add_static` | Add a static DHCP mapping |
 | `opnsense_dhcp_delete_static` | Delete a static mapping by UUID |
 
-### System (7 tools)
+### System (10 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -474,6 +474,9 @@ spike, empirical findings, and rollback contract.
 | `opnsense_sys_list_certs` | List all certificates in the trust store |
 | `opnsense_svc_list` | List all services and their running status |
 | `opnsense_svc_control` | Start, stop, or restart a service by name |
+| `opnsense_sys_tunable_list` | List all configured FreeBSD sysctl tunables (System → Settings → Tunables) |
+| `opnsense_sys_tunable_get` | Get a single configured tunable by sysctl name |
+| `opnsense_sys_tunable_set` | Upsert a tunable (creates or updates) and optionally apply via reconfigure |
 
 ### ACME/Let's Encrypt (14 tools)
 
