@@ -22,6 +22,41 @@ const BackupDownloadSchema = z.object({
     .describe("Specific backup ID to download. If omitted, downloads the current running config."),
 });
 
+// FreeBSD sysctl name pattern: hierarchical dot-separated identifiers
+// e.g. "dev.em.0.eee_control", "net.inet.tcp.recvspace", "kern.ipc.somaxconn"
+const TunableNameSchema = z
+  .string()
+  .min(1, "Tunable name is required")
+  .regex(
+    /^[A-Za-z0-9_.]+$/,
+    "Tunable name must be a FreeBSD sysctl identifier (alphanumeric + dot + underscore)",
+  );
+
+const TunableGetSchema = z.object({
+  tunable: TunableNameSchema.describe(
+    "FreeBSD sysctl name (e.g. 'dev.em.0.eee_control', 'net.inet.tcp.recvspace')",
+  ),
+});
+
+const TunableSetSchema = z.object({
+  tunable: TunableNameSchema.describe("FreeBSD sysctl name (e.g. 'dev.em.0.eee_control')"),
+  value: z
+    .string()
+    .min(1, "Tunable value is required")
+    .describe("Value to set (numbers and strings are both passed as strings, matching OPNsense API)"),
+  descr: z
+    .string()
+    .optional()
+    .describe("Optional description / rationale (visible in OPNsense UI)"),
+  apply: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe(
+      "Apply the change immediately by calling reconfigure (default: true). Set false to batch multiple updates.",
+    ),
+});
+
 // ---------------------------------------------------------------------------
 // Tool definitions (for ListTools)
 // ---------------------------------------------------------------------------
@@ -100,7 +135,95 @@ export const systemToolDefinitions = [
       required: ["service_name", "action"],
     },
   },
+  {
+    name: "opnsense_sys_tunable_list",
+    description:
+      "List all configured FreeBSD sysctl tunables on OPNsense (System → Settings → Tunables). Returns tunable name, configured value, UUID, description. Use opnsense_sys_tunable_get to inspect a specific one.",
+    inputSchema: { type: "object" as const, properties: {} },
+  },
+  {
+    name: "opnsense_sys_tunable_get",
+    description:
+      "Get a single configured tunable by sysctl name (e.g. 'dev.em.0.eee_control'). Returns the configured value, UUID, and description. Returns null if the tunable is not configured.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        tunable: {
+          type: "string",
+          description:
+            "FreeBSD sysctl name (e.g. 'dev.em.0.eee_control', 'net.inet.tcp.recvspace', 'kern.ipc.somaxconn')",
+        },
+      },
+      required: ["tunable"],
+    },
+  },
+  {
+    name: "opnsense_sys_tunable_set",
+    description:
+      "Upsert a FreeBSD sysctl tunable on OPNsense (creates if missing, updates if existing). Persists across reboots via OPNsense config. By default automatically applies the change via reconfigure. Useful for hardware quirks (e.g. dev.em.0.eee_control=0 to disable EEE), performance tuning, or kernel parameter overrides.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        tunable: {
+          type: "string",
+          description: "FreeBSD sysctl name (e.g. 'dev.em.0.eee_control')",
+        },
+        value: {
+          type: "string",
+          description:
+            "Value to set (numbers and strings are both passed as strings, matching OPNsense API)",
+        },
+        descr: {
+          type: "string",
+          description: "Optional description / rationale (visible in OPNsense UI)",
+        },
+        apply: {
+          type: "boolean",
+          description:
+            "Apply the change immediately by calling reconfigure (default: true). Set false to batch multiple updates and apply later.",
+          default: true,
+        },
+      },
+      required: ["tunable", "value"],
+    },
+  },
 ];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+interface TunableRow {
+  uuid?: string;
+  tunable?: string;
+  value?: string;
+  descr?: string;
+  [key: string]: unknown;
+}
+
+interface SearchTunableResponse {
+  rows?: TunableRow[];
+  total?: number;
+  rowCount?: number;
+  current?: number;
+}
+
+/**
+ * Look up a configured tunable by its FreeBSD sysctl name (e.g. "dev.em.0.eee_control").
+ * Returns the matching row including its UUID, or null if not found.
+ *
+ * OPNsense's searchTunable returns all configured tunables; we filter client-side
+ * because the API has no exact-match-by-name query parameter.
+ */
+async function findTunableByName(
+  client: OPNsenseClient,
+  name: string,
+): Promise<TunableRow | null> {
+  const result = await client.post<SearchTunableResponse>("/system/settings/searchTunable", {});
+  const rows = result.rows ?? [];
+  const match = rows.find((row) => row.tunable === name);
+  return match ?? null;
+}
 
 // ---------------------------------------------------------------------------
 // Tool handler
@@ -156,6 +279,82 @@ export async function handleSystemTool(
           `/core/service/${parsed.action}/${encodeURIComponent(parsed.service_name)}`,
         );
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_sys_tunable_list": {
+        // OPNsense convention: search* endpoints accept POST with optional pagination body.
+        // An empty body returns all rows with default pagination.
+        const result = await client.post("/system/settings/searchTunable", {});
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      }
+
+      case "opnsense_sys_tunable_get": {
+        const parsed = TunableGetSchema.parse(args);
+        const found = await findTunableByName(client, parsed.tunable);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                found ?? { tunable: parsed.tunable, configured: false, message: "Tunable is not configured (using FreeBSD default)" },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
+      case "opnsense_sys_tunable_set": {
+        const parsed = TunableSetSchema.parse(args);
+        const existing = await findTunableByName(client, parsed.tunable);
+
+        const body = {
+          tunable: {
+            tunable: parsed.tunable,
+            value: parsed.value,
+            descr: parsed.descr ?? "",
+          },
+        };
+
+        let mutationResult: unknown;
+        let action: "added" | "updated";
+
+        if (existing && typeof existing === "object" && "uuid" in existing && existing.uuid) {
+          action = "updated";
+          mutationResult = await client.post(
+            `/system/settings/setTunable/${encodeURIComponent(String(existing.uuid))}`,
+            body,
+          );
+        } else {
+          action = "added";
+          mutationResult = await client.post("/system/settings/addTunable", body);
+        }
+
+        let applyResult: unknown = null;
+        if (parsed.apply !== false) {
+          applyResult = await client.post("/system/settings/reconfigure");
+        }
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  action,
+                  tunable: parsed.tunable,
+                  value: parsed.value,
+                  applied: parsed.apply !== false,
+                  mutation: mutationResult,
+                  apply: applyResult,
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
       }
 
       default:

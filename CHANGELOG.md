@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.05.06.1
+
+- **feat: System tunables tools** (#133)
+  - 3 new tools: `opnsense_sys_tunable_list`, `opnsense_sys_tunable_get`, `opnsense_sys_tunable_set`
+  - Wraps OPNsense `/api/system/settings/{searchTunable,addTunable,setTunable,reconfigure}` endpoints (Path A: persists in OPNsense config across reboots)
+  - `set` is upsert by sysctl name — creates if missing, updates if existing — and auto-applies via `reconfigure` (toggle off via `apply: false` to batch multiple updates)
+  - `get` accepts the sysctl name and returns either the configured row (incl. UUID) or a `{configured: false}` sentinel indicating the tunable is using its FreeBSD default
+  - Enables MCP-first verification + remediation of hardware quirks (e.g. `dev.em.0.eee_control=0` for Intel `em` LPI bug, equivalent Realtek EEE knobs), performance tuning (`net.inet.tcp.recvspace`, `kern.ipc.somaxconn`), and arbitrary kernel parameter overrides without UI/SSH fallback
+  - 7 new vitest unit tests (full handler matrix incl. add/update/skip-apply/invalid-name)
+  - System tools count: 7 → 10
+
 ## v2026.05.03.1
 
 - **feat: Source NAT (SNAT) tools** (#123 partial)
