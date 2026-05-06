@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.05.06.3
+
+- **fix: log_system / log_gateways / log_routing / log_resolver no longer return empty arrays** (#132)
+  - Previously the 4 `opnsense_diag_log_*` tools always queried `/diagnostics/log/core/<category>?limit=N`, which returns empty arrays on current OPNsense versions even when the UI shows entries (the `core/` prefix was incorrect for newer firmware).
+  - The fix introduces a 3-tier endpoint fallback chain — canonical GET `/diagnostics/log/<category>?limit=N` → POST `/diagnostics/log/<category>/search` (newer search-style endpoint with `{current, rowCount, sort, searchPhrase}` body) → legacy GET `/diagnostics/log/core/<category>?limit=N`. The first variant returning a non-empty payload wins; if all return empty, the last attempt's (correctly-shaped) result is preserved so genuinely-empty logs stay distinguishable from misconfiguration.
+  - 404 / connection errors on a variant cause graceful continuation to the next; only when every variant errors does the failure propagate.
+  - Empty-but-valid `{rows: []}` responses are correctly classified (not treated as a hit) so fallback continues — distinct from an actually-populated response with rows.
+  - 10 new vitest unit tests covering: canonical-hit, canonical-empty + search-hit, both-empty + legacy-hit, all-empty (last-payload preservation), 404 skip-and-continue, all-errored propagation, `{rows:[]}` shape handling, plus preserved limit-validation and string-coercion tests.
+
 ## v2026.05.06.2
 
 - **fix: DHCP lease endpoints now return Kea leases on Kea-backed installs** (#131)
