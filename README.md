@@ -457,8 +457,8 @@ spike, empirical findings, and rollback contract.
 
 | Tool | Description |
 |------|-------------|
-| `opnsense_dhcp_list_leases` | List all current DHCPv4 leases |
-| `opnsense_dhcp_find_lease` | Search leases by IP, MAC, or hostname |
+| `opnsense_dhcp_list_leases` | List all current DHCPv4 leases (Kea + ISC, auto-detected) |
+| `opnsense_dhcp_find_lease` | Search leases by IP, MAC, or hostname (Kea + ISC, auto-detected) |
 | `opnsense_dhcp_list_static` | List static DHCP mappings (reservations) |
 | `opnsense_dhcp_add_static` | Add a static DHCP mapping |
 | `opnsense_dhcp_delete_static` | Delete a static mapping by UUID |

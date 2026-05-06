@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 This project uses [Calendar Versioning](https://calver.org/) (`YYYY.MM.DD.TS`).
 
 
+## v2026.05.06.2
+
+- **fix: DHCP lease endpoints now return Kea leases on Kea-backed installs** (#131)
+  - `opnsense_dhcp_list_leases` and `opnsense_dhcp_find_lease` previously called only the legacy ISC endpoint `/dhcpv4/leases/searchLease`, which returns empty arrays when Kea is the active DHCPv4 backend (the modern OPNsense default).
+  - Both tools now try Kea (`/kea/leases4/search`) first and fall back to ISC on error (404 / plugin missing) — matching the auto-detect pattern already used for static reservations.
+  - Empty Kea responses (no leases yet) are returned as-is and do **not** trigger the ISC fallback — only actual errors do, so genuinely-empty results stay distinguishable from misconfiguration.
+  - `find_lease` `searchPhrase` is forwarded to whichever backend handles the request.
+  - 9 new vitest unit tests covering: Kea success, ISC fallback on Kea error, empty-but-valid Kea response (no fallback), find by MAC with URL encoding, find fallback, empty-query rejection.
+
 ## v2026.05.06.1
 
 - **feat: System tunables tools** (#133)
