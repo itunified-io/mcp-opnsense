@@ -78,12 +78,14 @@ async function detectDhcpBackend(client: OPNsenseClient): Promise<DhcpBackend> {
 export const dhcpToolDefinitions = [
   {
     name: "opnsense_dhcp_list_leases",
-    description: "List all current DHCPv4 leases",
+    description:
+      "List all current DHCPv4 leases. Supports both Kea DHCP (default on modern OPNsense) and ISC DHCP (legacy) backends — auto-detects which is active.",
     inputSchema: { type: "object" as const, properties: {} },
   },
   {
     name: "opnsense_dhcp_find_lease",
-    description: "Search DHCPv4 leases by IP address, MAC address, or hostname",
+    description:
+      "Search DHCPv4 leases by IP address, MAC address, or hostname. Supports both Kea DHCP and ISC DHCP (legacy) backends — auto-detects which is active.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -351,8 +353,40 @@ async function keaApply(
 }
 
 // ---------------------------------------------------------------------------
+// Kea DHCP lease helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * List Kea DHCPv4 leases. After OPNsense's Kea migration, leases live in
+ * /var/db/kea/kea-leases4.csv and are exposed via the Kea Leases plugin
+ * endpoint `/kea/leases4/search` — NOT the legacy `/dhcpv4/leases/searchLease`
+ * (which only returns ISC dhcpd leases and is empty under Kea).
+ *
+ * Returns an OPNsense-standard search response: `{rows, rowCount, total, current}`.
+ */
+async function keaListLeases(client: OPNsenseClient): Promise<unknown> {
+  return await client.get("/kea/leases4/search");
+}
+
+async function keaFindLease(client: OPNsenseClient, query: string): Promise<unknown> {
+  return await client.get(
+    `/kea/leases4/search?searchPhrase=${encodeURIComponent(query)}`,
+  );
+}
+
+// ---------------------------------------------------------------------------
 // ISC DHCP helpers (legacy)
 // ---------------------------------------------------------------------------
+
+async function iscListLeases(client: OPNsenseClient): Promise<unknown> {
+  return await client.get("/dhcpv4/leases/searchLease");
+}
+
+async function iscFindLease(client: OPNsenseClient, query: string): Promise<unknown> {
+  return await client.get(
+    `/dhcpv4/leases/searchLease?searchPhrase=${encodeURIComponent(query)}`,
+  );
+}
 
 async function iscListStatic(
   client: OPNsenseClient,
@@ -396,16 +430,29 @@ export async function handleDhcpTool(
   try {
     switch (name) {
       case "opnsense_dhcp_list_leases": {
-        const result = await client.get("/dhcpv4/leases/searchLease");
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        // Try Kea first (the modern OPNsense default). If Kea endpoint 404s
+        // (plugin not installed) fall back to ISC dhcpd. This matches the
+        // backend-detection pattern used for static reservations and fixes
+        // #131 — without this, Kea-backed installs returned empty arrays
+        // even when active leases were visible in the OPNsense UI.
+        try {
+          const result = await keaListLeases(client);
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        } catch {
+          const result = await iscListLeases(client);
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        }
       }
 
       case "opnsense_dhcp_find_lease": {
         const parsed = FindLeaseSchema.parse(args);
-        const result = await client.get(
-          `/dhcpv4/leases/searchLease?searchPhrase=${encodeURIComponent(parsed.query)}`,
-        );
-        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        try {
+          const result = await keaFindLease(client, parsed.query);
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        } catch {
+          const result = await iscFindLease(client, parsed.query);
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+        }
       }
 
       case "opnsense_dhcp_list_static": {
