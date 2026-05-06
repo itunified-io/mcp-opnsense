@@ -184,6 +184,83 @@ export const diagnosticsToolDefinitions = [
 ];
 
 // ---------------------------------------------------------------------------
+// Helpers — log endpoints
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch a system log category by name with endpoint-fallback.
+ *
+ * OPNsense's diagnostics log endpoints have varied across versions:
+ *   - older: /diagnostics/log/<category>          (GET, ?limit=N)
+ *   - newer: /diagnostics/log/core/<category>     (GET, ?limit=N) — what the
+ *            previous code targeted; returns empty arrays on current OPNsense
+ *            (#132 — log endpoints return empty)
+ *   - newest: /diagnostics/log/<category>/search  (POST, body with rowCount)
+ *
+ * We try the canonical newer path first, then the search variant, then the
+ * older flat path. The first call that returns a non-empty payload wins;
+ * if all return empty, we return the last attempt's payload (which is at
+ * least correctly shaped, even if the log is genuinely empty).
+ *
+ * Categories: system, gateways, routing, resolver.
+ */
+async function fetchLogWithFallback(
+  client: OPNsenseClient,
+  category: string,
+  limit: number,
+): Promise<unknown> {
+  type Variant = { method: "get" | "post"; path: string; body?: unknown };
+  const variants: Variant[] = [
+    { method: "get", path: `/diagnostics/log/${category}?limit=${limit}` },
+    {
+      method: "post",
+      path: `/diagnostics/log/${category}/search`,
+      body: { current: 1, rowCount: limit, sort: {}, searchPhrase: "" },
+    },
+    { method: "get", path: `/diagnostics/log/core/${category}?limit=${limit}` },
+  ];
+
+  let lastResult: unknown = null;
+  let lastError: unknown = null;
+
+  for (const variant of variants) {
+    try {
+      const result =
+        variant.method === "get"
+          ? await client.get<unknown>(variant.path)
+          : await client.post<unknown>(variant.path, variant.body);
+
+      // A non-empty payload wins. Treat the result as non-empty if:
+      //   - array with length > 0
+      //   - object with rows[].length > 0
+      //   - object with any other non-empty data field
+      if (isNonEmptyLogPayload(result)) {
+        return result;
+      }
+      lastResult = result;
+    } catch (error) {
+      lastError = error;
+      // Endpoint not present (404) → keep trying. Other errors propagate
+      // only if every variant fails.
+    }
+  }
+
+  if (lastResult !== null) return lastResult;
+  if (lastError) throw lastError;
+  return [];
+}
+
+function isNonEmptyLogPayload(payload: unknown): boolean {
+  if (Array.isArray(payload)) return payload.length > 0;
+  if (payload && typeof payload === "object") {
+    const obj = payload as Record<string, unknown>;
+    if (Array.isArray(obj["rows"]) && (obj["rows"] as unknown[]).length > 0) return true;
+    if (typeof obj["total"] === "number" && obj["total"] > 0) return true;
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // Tool handler
 // ---------------------------------------------------------------------------
 
@@ -331,25 +408,25 @@ export async function handleDiagnosticsTool(
 
       case "opnsense_diag_log_system": {
         const parsed = LogQuerySchema.parse(args);
-        const result = await client.get(`/diagnostics/log/core/system?limit=${parsed.limit}`);
+        const result = await fetchLogWithFallback(client, "system", parsed.limit);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_diag_log_gateways": {
         const parsed = LogQuerySchema.parse(args);
-        const result = await client.get(`/diagnostics/log/core/gateways?limit=${parsed.limit}`);
+        const result = await fetchLogWithFallback(client, "gateways", parsed.limit);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_diag_log_routing": {
         const parsed = LogQuerySchema.parse(args);
-        const result = await client.get(`/diagnostics/log/core/routing?limit=${parsed.limit}`);
+        const result = await fetchLogWithFallback(client, "routing", parsed.limit);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
       case "opnsense_diag_log_resolver": {
         const parsed = LogQuerySchema.parse(args);
-        const result = await client.get(`/diagnostics/log/core/resolver?limit=${parsed.limit}`);
+        const result = await fetchLogWithFallback(client, "resolver", parsed.limit);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       }
 
